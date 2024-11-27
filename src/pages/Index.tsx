@@ -1,39 +1,28 @@
-import { useState } from "react";
-import { QuoteCard } from "@/components/QuoteCard";
-import { Settings } from "@/components/Settings";
-import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth"
+import { AuthForm } from "@/components/AuthForm"
+import { QuoteCard } from "@/components/QuoteCard"
+import { Settings } from "@/components/Settings"
 
-const Index = () => {
-  const [showSettings, setShowSettings] = useState(false);
+export default function Index() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light via-secondary to-primary-dark p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowSettings(!showSettings)}
-            className="bg-white/50 backdrop-blur-sm hover:bg-white/60"
-          >
-            <Settings2 className="h-5 w-5" />
-          </Button>
+    <div className="container mx-auto px-4 py-8">
+      {!user ? (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h1 className="text-3xl font-bold mb-8">Welcome to DailyQuotes</h1>
+          <AuthForm />
         </div>
-
-        <div className="flex flex-col items-center justify-center min-h-[80vh]">
-          {showSettings ? (
-            <Settings />
-          ) : (
-            <QuoteCard
-              quote="The only way to do great work is to love what you do."
-              author="Steve Jobs"
-            />
-          )}
+      ) : (
+        <div className="space-y-8">
+          <QuoteCard />
+          <Settings />
         </div>
-      </div>
+      )}
     </div>
-  );
-};
-
-export default Index;
+  )
+}
