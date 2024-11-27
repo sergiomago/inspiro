@@ -1,14 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Share2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { generateQuote } from "@/lib/openai";
 
 interface QuoteCardProps {
-  quote: string;
-  author: string;
+  quote?: string;
+  author?: string;
 }
 
-export const QuoteCard = ({ quote, author }: QuoteCardProps) => {
+export const QuoteCard = ({ quote: initialQuote = "Click refresh to generate a quote", author: initialAuthor = "AI" }: QuoteCardProps) => {
+  const [quote, setQuote] = useState(initialQuote);
+  const [author, setAuthor] = useState(initialAuthor);
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleSave = () => {
     toast.success("Quote saved to favorites!");
   };
@@ -19,7 +25,22 @@ export const QuoteCard = ({ quote, author }: QuoteCardProps) => {
         text: `"${quote}" - ${author}`,
       });
     } catch {
+      navigator.clipboard.writeText(`"${quote}" - ${author}`);
       toast.success("Quote copied to clipboard!");
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      const newQuote = await generateQuote("inspiration");
+      setQuote(newQuote);
+      setAuthor("AI");
+      toast.success("New quote generated!");
+    } catch (error) {
+      toast.error("Failed to generate quote. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,6 +66,15 @@ export const QuoteCard = ({ quote, author }: QuoteCardProps) => {
             className="hover:text-primary"
           >
             <Share2 className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="hover:text-primary"
+          >
+            <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
         </div>
       </div>

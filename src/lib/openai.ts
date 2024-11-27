@@ -24,7 +24,7 @@ export const generateQuote = async (topic: string) => {
           content: `Generate a motivational quote about ${topic}`
         }
       ],
-      model: "gpt-4",
+      model: "gpt-4o",
     });
 
     return completion.choices[0]?.message?.content || "Could not generate quote";

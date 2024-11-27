@@ -19,7 +19,7 @@ export default function Index() {
         </div>
       ) : (
         <div className="space-y-8">
-          <QuoteCard />
+          <QuoteCard quote="Welcome to DailyQuotes! Click refresh to generate your first quote." author="DailyQuotes" />
           <Settings />
         </div>
       )}
