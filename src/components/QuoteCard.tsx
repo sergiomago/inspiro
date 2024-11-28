@@ -17,6 +17,28 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   const [isLoading, setIsLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
+  const checkIfFavorite = async (quoteText: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('favorites')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('quote', quoteText)
+          .single();
+        
+        setIsFavorite(!!data);
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkIfFavorite(quote);
+  }, [quote]);
+
   const handleSave = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -26,52 +48,52 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
       }
 
       if (isFavorite) {
-        await supabase
+        const { error } = await supabase
           .from('favorites')
           .delete()
           .match({ user_id: user.id, quote: quote });
+          
+        if (error) throw error;
         setIsFavorite(false);
         toast.success("Quote removed from favorites");
       } else {
-        await supabase
+        const { error } = await supabase
           .from('favorites')
           .insert([
             { user_id: user.id, quote: quote, author: author }
           ]);
+          
+        if (error) throw error;
         setIsFavorite(true);
         toast.success("Quote saved to favorites");
       }
     } catch (error) {
       toast.error("Failed to save quote");
-    }
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        text: `"${quote}" - ${author}`,
-      });
-    } catch {
-      navigator.clipboard.writeText(`"${quote}" - ${author}`);
-      toast.success("Quote copied to clipboard!");
+      console.error('Error saving quote:', error);
     }
   };
 
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
       const { data: settings } = await supabase
         .from('user_settings')
         .select('quote_source')
+        .eq('user_id', user.id)
         .single();
       
       const quoteType = settings?.quote_source || 'mixed';
       const newQuote = await generateQuote(quoteType);
       setQuote(newQuote);
       setAuthor(quoteType === 'human' ? 'Classic Quote' : 'Inspiro AI');
+      setIsFavorite(false); // Reset favorite state for new quote
       toast.success("New quote generated!");
     } catch (error) {
       toast.error("Failed to generate quote. Please try again.");
+      console.error('Error generating quote:', error);
     } finally {
       setIsLoading(false);
     }

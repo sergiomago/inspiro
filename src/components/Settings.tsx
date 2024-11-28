@@ -35,21 +35,27 @@ export const Settings = ({ onClose }: SettingsProps) => {
 
   useEffect(() => {
     const loadSettings = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: settings } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (settings) {
-          setNotificationsEnabled(settings.notifications_enabled);
-          setFrequency(settings.frequency);
-          setTime1(settings.time1);
-          setTime2(settings.time2);
-          setQuoteSource(settings.quote_source);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: settings, error } = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (error && error.code !== 'PGRST116') throw error;
+          
+          if (settings) {
+            setNotificationsEnabled(settings.notifications_enabled);
+            setFrequency(settings.frequency);
+            setTime1(settings.time1);
+            setTime2(settings.time2);
+            setQuoteSource(settings.quote_source);
+          }
         }
+      } catch (error) {
+        toast.error('Error loading settings');
       }
     };
     loadSettings();
@@ -59,22 +65,26 @@ export const Settings = ({ onClose }: SettingsProps) => {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('user_settings')
-          .upsert({
-            user_id: user.id,
-            notifications_enabled: notificationsEnabled,
-            frequency,
-            time1,
-            time2,
-            quote_source: quoteSource
-          });
-        toast.success("Settings saved successfully!");
-        onClose?.();
-      }
+      if (!user) throw new Error('No user found');
+
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          notifications_enabled: notificationsEnabled,
+          frequency,
+          time1,
+          time2,
+          quote_source: quoteSource
+        });
+
+      if (error) throw error;
+      
+      toast.success("Settings saved successfully!");
+      onClose?.();
     } catch (error) {
       toast.error("Failed to save settings");
+      console.error('Error saving settings:', error);
     } finally {
       setLoading(false);
     }
