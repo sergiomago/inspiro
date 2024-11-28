@@ -21,30 +21,25 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-secondary/30 to-primary/20">
+    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5]">
       {!user ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <img
-            src="https://images.unsplash.com/photo-1469474968028-56623f02e42e"
-            alt="Inspirational landscape"
-            className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none"
-          />
           <div className="relative z-10 text-center">
-            <h1 className="text-4xl font-bold mb-2 text-primary-dark">Inspiro</h1>
-            <p className="text-gray-600 mb-8">Daily inspiration for your journey</p>
+            <h1 className="text-4xl font-bold mb-2 text-white">Inspiro</h1>
+            <p className="text-white/80 mb-8">Daily inspiration for your journey</p>
             <AuthForm />
           </div>
         </div>
       ) : (
         <div className="container mx-auto px-4 min-h-screen flex flex-col">
           <div className="flex justify-between items-center py-8">
-            <h1 className="text-3xl font-bold text-primary-dark">Inspiro</h1>
+            <h1 className="text-3xl font-bold text-white">Inspiro</h1>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowSettings(s => !s)}
-                className="hover:text-primary transition-colors"
+                className="hover:text-primary transition-colors text-white"
               >
                 <SettingsIcon className="h-5 w-5" />
               </Button>
@@ -52,7 +47,7 @@ export default function Index() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowFavorites(true)}
-                className="hover:text-primary transition-colors"
+                className="hover:text-primary transition-colors text-white"
               >
                 <Heart className="h-5 w-5" />
               </Button>

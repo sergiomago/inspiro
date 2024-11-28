@@ -4,20 +4,26 @@ const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || 'default-development
 
 export const openai = new OpenAI({
   apiKey: openaiApiKey,
-  dangerouslyAllowBrowser: true // Note: In production, API calls should be made through a backend
+  dangerouslyAllowBrowser: true
 });
 
-export const generateQuote = async (topic: string) => {
+export const generateQuote = async (type: string = 'mixed') => {
   try {
+    const systemPrompt = type === 'human' 
+      ? "You are a quote curator. Provide only real, historical quotes from famous people. Include the author's name."
+      : type === 'ai' 
+      ? "You are an AI wisdom generator. Create original, inspiring quotes that sound modern and fresh."
+      : "You are a quote curator and creator. Alternate between providing historical quotes and generating original inspiring quotes.";
+
     const completion = await openai.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "You are a motivational quote generator. Generate a short, inspiring quote related to the given topic."
+          content: systemPrompt
         },
         {
           role: "user",
-          content: `Generate a motivational quote about ${topic}`
+          content: "Generate an inspiring quote"
         }
       ],
       model: "gpt-4o",

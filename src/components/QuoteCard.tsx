@@ -2,8 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Share2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateQuote } from "@/lib/openai";
+import { supabase } from "@/lib/supabase";
 
 interface QuoteCardProps {
   quote?: string;
@@ -16,9 +17,33 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   const [isLoading, setIsLoading] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const handleSave = () => {
-    setIsFavorite(!isFavorite);
-    toast.success(isFavorite ? "Quote removed from favorites" : "Quote saved to favorites!");
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save favorites");
+        return;
+      }
+
+      if (isFavorite) {
+        await supabase
+          .from('favorites')
+          .delete()
+          .match({ user_id: user.id, quote: quote });
+        setIsFavorite(false);
+        toast.success("Quote removed from favorites");
+      } else {
+        await supabase
+          .from('favorites')
+          .insert([
+            { user_id: user.id, quote: quote, author: author }
+          ]);
+        setIsFavorite(true);
+        toast.success("Quote saved to favorites");
+      }
+    } catch (error) {
+      toast.error("Failed to save quote");
+    }
   };
 
   const handleShare = async () => {
@@ -35,9 +60,15 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
-      const newQuote = await generateQuote("inspiration");
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('quote_source')
+        .single();
+      
+      const quoteType = settings?.quote_source || 'mixed';
+      const newQuote = await generateQuote(quoteType);
       setQuote(newQuote);
-      setAuthor("Inspiro AI");
+      setAuthor(quoteType === 'human' ? 'Classic Quote' : 'Inspiro AI');
       toast.success("New quote generated!");
     } catch (error) {
       toast.error("Failed to generate quote. Please try again.");
@@ -47,13 +78,13 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   };
 
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg">
+    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-white/10">
       <div className="space-y-6">
         <div className="space-y-4">
-          <p className="text-2xl font-serif italic text-primary-dark leading-relaxed">
+          <p className="text-2xl font-serif italic text-white leading-relaxed">
             "{quote}"
           </p>
-          <p className="text-right text-sm text-gray-600 font-medium">
+          <p className="text-right text-sm text-white/80 font-medium">
             - {author}
           </p>
         </div>
@@ -63,7 +94,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            className={`hover:text-primary transition-colors ${isFavorite ? 'text-primary' : ''}`}
+            className={`hover:text-primary transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
           >
             <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
           </Button>
@@ -71,7 +102,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleShare}
-            className="hover:text-primary transition-colors"
+            className="hover:text-primary transition-colors text-white"
           >
             <Share2 className="h-5 w-5" />
           </Button>
@@ -80,7 +111,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             size="icon"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="hover:text-primary transition-colors"
+            className="hover:text-primary transition-colors text-white"
           >
             <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>

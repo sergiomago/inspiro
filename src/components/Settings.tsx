@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 interface SettingsProps {
   onClose?: () => void;
@@ -30,14 +31,57 @@ export const Settings = ({ onClose }: SettingsProps) => {
   const [time1, setTime1] = useState("08:00");
   const [time2, setTime2] = useState("20:00");
   const [quoteSource, setQuoteSource] = useState("mixed");
+  const [loading, setLoading] = useState(false);
 
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully!");
-    onClose?.();
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: settings } = await supabase
+          .from('user_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (settings) {
+          setNotificationsEnabled(settings.notifications_enabled);
+          setFrequency(settings.frequency);
+          setTime1(settings.time1);
+          setTime2(settings.time2);
+          setQuoteSource(settings.quote_source);
+        }
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('user_settings')
+          .upsert({
+            user_id: user.id,
+            notifications_enabled: notificationsEnabled,
+            frequency,
+            time1,
+            time2,
+            quote_source: quoteSource
+          });
+        toast.success("Settings saved successfully!");
+        onClose?.();
+      }
+    } catch (error) {
+      toast.error("Failed to save settings");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Card className="glass-card border-none shadow-lg relative">
+    <Card className="glass-card border-none shadow-lg relative bg-white/10">
       {onClose && (
         <Button
           variant="ghost"
