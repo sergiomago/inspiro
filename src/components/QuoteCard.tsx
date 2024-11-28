@@ -14,9 +14,11 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   const [quote, setQuote] = useState(initialQuote);
   const [author, setAuthor] = useState(initialAuthor);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const handleSave = () => {
-    toast.success("Quote saved to favorites!");
+    setIsFavorite(!isFavorite);
+    toast.success(isFavorite ? "Quote removed from favorites" : "Quote saved to favorites!");
   };
 
   const handleShare = async () => {
@@ -61,9 +63,9 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            className="hover:text-primary transition-colors"
+            className={`hover:text-primary transition-colors ${isFavorite ? 'text-primary' : ''}`}
           >
-            <Heart className="h-5 w-5" />
+            <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
           </Button>
           <Button
             variant="ghost"

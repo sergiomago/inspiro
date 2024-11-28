@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Clock, X } from "lucide-react";
+import { Bell, Clock, X, Sparkles } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +29,7 @@ export const Settings = ({ onClose }: SettingsProps) => {
   const [frequency, setFrequency] = useState("daily");
   const [time1, setTime1] = useState("08:00");
   const [time2, setTime2] = useState("20:00");
+  const [quoteSource, setQuoteSource] = useState("mixed");
 
   const handleSaveSettings = () => {
     toast.success("Settings saved successfully!");
@@ -48,7 +51,7 @@ export const Settings = ({ onClose }: SettingsProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-primary-dark">
           <Bell className="h-5 w-5" />
-          Notifications
+          Settings
         </CardTitle>
         <CardDescription>Configure your inspirational quotes delivery</CardDescription>
       </CardHeader>
@@ -102,11 +105,36 @@ export const Settings = ({ onClose }: SettingsProps) => {
                   type="time"
                   value={time2}
                   onChange={(e) => setTime2(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 mt-2"
                   disabled={!notificationsEnabled}
                 />
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Quote Source
+            </label>
+            <RadioGroup
+              value={quoteSource}
+              onValueChange={setQuoteSource}
+              className="grid gap-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="ai" id="ai" />
+                <Label htmlFor="ai">AI-Generated Quotes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="human" id="human" />
+                <Label htmlFor="human">Classic Quotes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="mixed" id="mixed" />
+                <Label htmlFor="mixed">Mix of Both</Label>
+              </div>
+            </RadioGroup>
           </div>
         </div>
 

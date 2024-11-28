@@ -5,10 +5,12 @@ import { Settings } from "@/components/Settings"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Settings as SettingsIcon, Heart } from "lucide-react"
+import { FavoriteQuotes } from "@/components/FavoriteQuotes"
 
 export default function Index() {
   const { user, loading } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
+  const [showFavorites, setShowFavorites] = useState(false)
 
   if (loading) {
     return (
@@ -19,7 +21,7 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-white via-secondary/30 to-primary/20">
       {!user ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <img
@@ -34,8 +36,8 @@ export default function Index() {
           </div>
         </div>
       ) : (
-        <div className="container mx-auto px-4 py-8 relative">
-          <div className="flex justify-between items-center mb-8">
+        <div className="container mx-auto px-4 min-h-screen flex flex-col">
+          <div className="flex justify-between items-center py-8">
             <h1 className="text-3xl font-bold text-primary-dark">Inspiro</h1>
             <div className="flex gap-2">
               <Button
@@ -49,6 +51,7 @@ export default function Index() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowFavorites(true)}
                 className="hover:text-primary transition-colors"
               >
                 <Heart className="h-5 w-5" />
@@ -56,16 +59,25 @@ export default function Index() {
             </div>
           </div>
 
-          <div className="grid gap-8 items-start">
+          <div className="flex-grow flex items-center justify-center">
             <QuoteCard />
-            {showSettings && (
-              <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="w-full max-w-md">
-                  <Settings onClose={() => setShowSettings(false)} />
-                </div>
-              </div>
-            )}
           </div>
+
+          {showSettings && (
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="w-full max-w-md">
+                <Settings onClose={() => setShowSettings(false)} />
+              </div>
+            </div>
+          )}
+
+          {showFavorites && (
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="w-full max-w-2xl">
+                <FavoriteQuotes onClose={() => setShowFavorites(false)} />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
