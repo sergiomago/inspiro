@@ -73,6 +73,24 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
     }
   };
 
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Inspirational Quote',
+          text: `"${quote}" - ${author}`,
+        });
+        toast.success("Quote shared successfully!");
+      } else {
+        await navigator.clipboard.writeText(`"${quote}" - ${author}`);
+        toast.success("Quote copied to clipboard!");
+      }
+    } catch (error) {
+      console.error('Error sharing quote:', error);
+      toast.error("Failed to share quote");
+    }
+  };
+
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
