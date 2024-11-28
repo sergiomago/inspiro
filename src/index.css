@@ -23,5 +23,5 @@
 }
 
 .glass-card {
-  @apply bg-white/50 backdrop-blur-sm;
+  @apply bg-white/70 backdrop-blur-md shadow-xl;
 }
