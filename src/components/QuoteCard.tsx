@@ -48,14 +48,24 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
       }
 
       if (isFavorite) {
-        const { error } = await supabase
+        // Find the favorite to delete
+        const { data: favoriteData } = await supabase
           .from('favorites')
-          .delete()
-          .match({ user_id: user.id, quote: quote });
-          
-        if (error) throw error;
-        setIsFavorite(false);
-        toast.success("Quote removed from favorites");
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('quote', quote)
+          .single();
+
+        if (favoriteData) {
+          const { error } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('id', favoriteData.id);
+            
+          if (error) throw error;
+          setIsFavorite(false);
+          toast.success("Quote removed from favorites");
+        }
       } else {
         const { error } = await supabase
           .from('favorites')
@@ -108,7 +118,6 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
       setQuote(newQuote);
       setAuthor(quoteType === 'human' ? 'Classic Quote' : 'Inspiro AI');
       setIsFavorite(false); // Reset favorite state for new quote
-      toast.success("New quote generated!");
     } catch (error) {
       toast.error("Failed to generate quote. Please try again.");
       console.error('Error generating quote:', error);
