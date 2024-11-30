@@ -22,7 +22,7 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#E5DEFF] via-[#b8a8f8] to-[#9b87f5]">
+    <div className="min-h-screen bg-gradient-to-br from-[#F2F0FB] via-[#E5DEFF] to-[#D6BCFA]">
       {!user ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <div className="relative z-10 text-center space-y-6">

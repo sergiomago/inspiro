@@ -123,7 +123,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   };
 
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-primary-dark/90">
+    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-primary-dark/95">
       <div className="space-y-6">
         <div className="space-y-4">
           <p className="text-2xl font-serif italic text-white leading-relaxed drop-shadow-lg">
