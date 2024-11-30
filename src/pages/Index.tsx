@@ -6,6 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Settings as SettingsIcon, Heart } from "lucide-react"
 import { FavoriteQuotes } from "@/components/FavoriteQuotes"
+import { Logo } from "@/components/Logo"
 
 export default function Index() {
   const { user, loading } = useAuth()
@@ -24,8 +25,8 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5]">
       {!user ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <div className="relative z-10 text-center">
-            <h1 className="text-4xl font-bold mb-2 text-white">Inspiro</h1>
+          <div className="relative z-10 text-center space-y-6">
+            <Logo />
             <p className="text-white/80 mb-8">Daily inspiration for your journey</p>
             <AuthForm />
           </div>
@@ -33,7 +34,7 @@ export default function Index() {
       ) : (
         <div className="container mx-auto px-4 min-h-screen flex flex-col">
           <div className="flex justify-between items-center py-8">
-            <h1 className="text-3xl font-bold text-white">Inspiro</h1>
+            <Logo />
             <div className="flex gap-2">
               <Button
                 variant="ghost"

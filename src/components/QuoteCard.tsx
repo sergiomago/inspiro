@@ -123,13 +123,13 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   };
 
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-white/10">
+    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-black/20">
       <div className="space-y-6">
         <div className="space-y-4">
-          <p className="text-2xl font-serif italic text-white leading-relaxed">
+          <p className="text-2xl font-serif italic text-white leading-relaxed drop-shadow-lg">
             "{quote}"
           </p>
-          <p className="text-right text-sm text-white/80 font-medium">
+          <p className="text-right text-sm text-white/90 font-medium drop-shadow">
             - {author}
           </p>
         </div>
@@ -139,7 +139,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            className={`hover:text-primary transition-colors ${isFavorite ? 'text-primary' : 'text-white'}`}
+            className={`hover:text-primary transition-colors drop-shadow-lg ${isFavorite ? 'text-primary' : 'text-white'}`}
           >
             <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
           </Button>
@@ -147,7 +147,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleShare}
-            className="hover:text-primary transition-colors text-white"
+            className="hover:text-primary transition-colors text-white drop-shadow-lg"
           >
             <Share2 className="h-5 w-5" />
           </Button>
@@ -156,7 +156,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             size="icon"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="hover:text-primary transition-colors text-white"
+            className="hover:text-primary transition-colors text-white drop-shadow-lg"
           >
             <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
