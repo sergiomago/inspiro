@@ -33,6 +33,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          frequency: string | null
+          notifications_enabled: boolean | null
+          quote_source: string | null
+          time1: string | null
+          time2: string | null
+          user_id: string
+        }
+        Insert: {
+          frequency?: string | null
+          notifications_enabled?: boolean | null
+          quote_source?: string | null
+          time1?: string | null
+          time2?: string | null
+          user_id: string
+        }
+        Update: {
+          frequency?: string | null
+          notifications_enabled?: boolean | null
+          quote_source?: string | null
+          time1?: string | null
+          time2?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

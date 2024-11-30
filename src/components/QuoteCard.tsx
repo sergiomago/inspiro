@@ -25,10 +25,9 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
           .from('favorites')
           .select('id')
           .eq('user_id', user.id)
-          .eq('quote', quoteText)
-          .single();
+          .eq('quote', quoteText);
         
-        setIsFavorite(!!data);
+        setIsFavorite(data && data.length > 0);
       }
     } catch (error) {
       console.error('Error checking favorite status:', error);
@@ -48,19 +47,17 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
       }
 
       if (isFavorite) {
-        // Find the favorite to delete
-        const { data: favoriteData } = await supabase
+        const { data } = await supabase
           .from('favorites')
           .select('id')
           .eq('user_id', user.id)
-          .eq('quote', quote)
-          .single();
+          .eq('quote', quote);
 
-        if (favoriteData) {
+        if (data && data.length > 0) {
           const { error } = await supabase
             .from('favorites')
             .delete()
-            .eq('id', favoriteData.id);
+            .eq('id', data[0].id);
             
           if (error) throw error;
           setIsFavorite(false);
@@ -107,13 +104,12 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const { data: settings } = await supabase
+      const { data } = await supabase
         .from('user_settings')
         .select('quote_source')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user.id);
       
-      const quoteType = settings?.quote_source || 'mixed';
+      const quoteType = data && data.length > 0 ? data[0].quote_source : 'mixed';
       const newQuote = await generateQuote(quoteType);
       setQuote(newQuote);
       setAuthor(quoteType === 'human' ? 'Classic Quote' : 'Inspiro AI');
