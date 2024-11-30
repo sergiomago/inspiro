@@ -18,19 +18,25 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
-export const generateQuote = async (type: string = 'mixed') => {
+export const generateQuote = async (type: string = 'mixed'): Promise<{ quote: string; author: string }> => {
   try {
     if (type === 'human') {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return classicQuotes[randomIndex].quote;
+      return {
+        quote: classicQuotes[randomIndex].quote,
+        author: classicQuotes[randomIndex].author
+      };
     }
 
     if (type === 'mixed' && Math.random() < 0.5) {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return classicQuotes[randomIndex].quote;
+      return {
+        quote: classicQuotes[randomIndex].quote,
+        author: classicQuotes[randomIndex].author
+      };
     }
 
-    let systemPrompt = type === 'ai' ? 
+    const systemPrompt = type === 'ai' ? 
       "You are an AI wisdom generator. Create original, inspiring quotes that sound modern and fresh. These should be completely new, AI-generated quotes." :
       "You are a quote generator that creates inspiring and meaningful quotes. Make them sound natural and impactful.";
 
@@ -48,7 +54,10 @@ export const generateQuote = async (type: string = 'mixed') => {
       model: "gpt-4o",
     });
 
-    return completion.choices[0]?.message?.content || "Could not generate quote";
+    return {
+      quote: completion.choices[0]?.message?.content || "Could not generate quote",
+      author: "Inspiro AI"
+    };
   } catch (error) {
     console.error('Error generating quote:', error);
     throw error;

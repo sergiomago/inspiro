@@ -22,12 +22,12 @@ export default function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#9b87f5] via-[#7E69AB] to-[#6E59A5]">
+    <div className="min-h-screen bg-gradient-to-br from-[#E5DEFF] via-[#b8a8f8] to-[#9b87f5]">
       {!user ? (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <div className="relative z-10 text-center space-y-6">
             <Logo />
-            <p className="text-white/80 mb-8">Daily inspiration for your journey</p>
+            <p className="text-primary-dark/80 mb-8">Daily inspiration for your journey</p>
             <AuthForm />
           </div>
         </div>
@@ -40,7 +40,7 @@ export default function Index() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowSettings(s => !s)}
-                className="hover:text-primary transition-colors text-white"
+                className="hover:text-primary transition-colors text-primary-dark"
               >
                 <SettingsIcon className="h-5 w-5" />
               </Button>
@@ -48,7 +48,7 @@ export default function Index() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowFavorites(true)}
-                className="hover:text-primary transition-colors text-white"
+                className="hover:text-primary transition-colors text-primary-dark"
               >
                 <Heart className="h-5 w-5" />
               </Button>

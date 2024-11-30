@@ -110,10 +110,10 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
         .eq('user_id', user.id);
       
       const quoteType = data && data.length > 0 ? data[0].quote_source : 'mixed';
-      const newQuote = await generateQuote(quoteType);
+      const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType);
       setQuote(newQuote);
-      setAuthor(quoteType === 'human' ? 'Classic Quote' : 'Inspiro AI');
-      setIsFavorite(false); // Reset favorite state for new quote
+      setAuthor(newAuthor);
+      setIsFavorite(false);
     } catch (error) {
       toast.error("Failed to generate quote. Please try again.");
       console.error('Error generating quote:', error);
@@ -123,7 +123,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
   };
 
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-black/20">
+    <Card className="w-full max-w-md p-8 animate-fade-in glass-card border-none shadow-lg bg-primary-dark/90">
       <div className="space-y-6">
         <div className="space-y-4">
           <p className="text-2xl font-serif italic text-white leading-relaxed drop-shadow-lg">
@@ -139,7 +139,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleSave}
-            className={`hover:text-primary transition-colors drop-shadow-lg ${isFavorite ? 'text-primary' : 'text-white'}`}
+            className={`hover:text-primary-light transition-colors drop-shadow-lg ${isFavorite ? 'text-primary-light' : 'text-white'}`}
           >
             <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
           </Button>
@@ -147,7 +147,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             variant="ghost"
             size="icon"
             onClick={handleShare}
-            className="hover:text-primary transition-colors text-white drop-shadow-lg"
+            className="hover:text-primary-light transition-colors text-white drop-shadow-lg"
           >
             <Share2 className="h-5 w-5" />
           </Button>
@@ -156,7 +156,7 @@ export const QuoteCard = ({ quote: initialQuote = "Welcome to Inspiro! Click ref
             size="icon"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="hover:text-primary transition-colors text-white drop-shadow-lg"
+            className="hover:text-primary-light transition-colors text-white drop-shadow-lg"
           >
             <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
