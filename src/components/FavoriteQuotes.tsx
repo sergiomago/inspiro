@@ -27,7 +27,6 @@ export const FavoriteQuotes = ({ onClose }: FavoriteQuotesProps) => {
       }
     } catch (error) {
       toast.error('Error fetching favorites');
-      console.error('Error fetching favorites:', error);
     } finally {
       setLoading(false);
     }
@@ -54,7 +53,7 @@ export const FavoriteQuotes = ({ onClose }: FavoriteQuotesProps) => {
   };
 
   return (
-    <Card className="glass-card border-none shadow-lg relative p-6 max-h-[80vh] overflow-y-auto bg-white/10">
+    <Card className="relative p-6 max-h-[80vh] overflow-y-auto bg-[#2D1B4D]/85 border-none shadow-lg">
       <Button
         variant="ghost"
         size="icon"
@@ -73,7 +72,7 @@ export const FavoriteQuotes = ({ onClose }: FavoriteQuotesProps) => {
           <p className="text-white/80">No favorite quotes yet. Start saving some!</p>
         ) : (
           favoriteQuotes.map((quote) => (
-            <Card key={quote.id} className="p-4 bg-white/20 relative">
+            <Card key={quote.id} className="p-4 bg-[#2D1B4D]/95 relative border-none">
               <Button
                 variant="ghost"
                 size="icon"

@@ -23,7 +23,3 @@
     @apply bg-background text-foreground antialiased;
   }
 }
-
-.glass-card {
-  @apply backdrop-blur-sm shadow-xl;
-}

@@ -83,23 +83,23 @@ export const Settings = ({ onClose }: SettingsProps) => {
   };
 
   return (
-    <Card className="glass-card border-none shadow-lg relative bg-white/10">
+    <Card className="relative bg-[#2D1B4D]/85 border-none shadow-lg">
       {onClose && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-2"
+          className="absolute right-2 top-2 text-white hover:text-primary"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
         </Button>
       )}
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-primary-dark">
+        <CardTitle className="flex items-center gap-2 text-white">
           <Bell className="h-5 w-5" />
           Settings
         </CardTitle>
-        <CardDescription>Configure your inspirational quotes delivery</CardDescription>
+        <CardDescription className="text-white/80">Configure your inspirational quotes delivery</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <NotificationSettings 

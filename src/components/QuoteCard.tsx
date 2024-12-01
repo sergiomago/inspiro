@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { generateQuote } from "@/lib/openai";
@@ -36,14 +36,29 @@ export const QuoteCard = ({
       setAuthor(newAuthor);
     } catch (error) {
       toast.error("Failed to generate quote. Please try again.");
-      console.error('Error generating quote:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleFavorite = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
+      const { error } = await supabase
+        .from('favorites')
+        .insert({ user_id: user.id, quote, author });
+      
+      if (error) throw error;
+      toast.success('Quote added to favorites!');
+    } catch (error) {
+      toast.error('Failed to save quote to favorites');
+    }
+  };
+
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-in border-none shadow-lg bg-[#2D1B4D]">
+    <Card className="w-full max-w-md p-8 animate-fade-in border-none shadow-lg bg-[#2D1B4D]/85">
       <div className="space-y-6">
         <div className="space-y-4">
           <p className="text-2xl font-serif italic text-white leading-relaxed">
@@ -54,7 +69,15 @@ export const QuoteCard = ({
           </p>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleFavorite}
+            className="hover:text-primary-light transition-colors text-white"
+          >
+            <Heart className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
