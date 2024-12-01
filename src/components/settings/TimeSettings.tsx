@@ -19,7 +19,7 @@ export const TimeSettings = ({
 }: TimeSettingsProps) => {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium flex items-center gap-2">
+      <label className="text-sm font-medium flex items-center gap-2 text-white">
         <Clock className="h-4 w-4" />
         Delivery Time
       </label>
@@ -28,7 +28,7 @@ export const TimeSettings = ({
           type="time"
           value={time1}
           onChange={(e) => onTime1Change(e.target.value)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2"
+          className="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white"
           disabled={disabled}
         />
         {showSecondTime && (
@@ -36,7 +36,7 @@ export const TimeSettings = ({
             type="time"
             value={time2}
             onChange={(e) => onTime2Change(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 mt-2"
+            className="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-white mt-2"
             disabled={disabled}
           />
         )}

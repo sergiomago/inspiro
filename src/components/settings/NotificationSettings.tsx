@@ -10,8 +10,8 @@ export const NotificationSettings = ({ enabled, onToggle }: NotificationSettings
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
-        <div className="font-medium">Enable Notifications</div>
-        <div className="text-sm text-gray-500">Receive quotes on schedule</div>
+        <div className="font-medium text-white">Enable Notifications</div>
+        <div className="text-sm text-white/60">Receive quotes on schedule</div>
       </div>
       <Switch checked={enabled} onCheckedChange={onToggle} />
     </div>
