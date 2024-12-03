@@ -70,6 +70,7 @@ export const FeedbackForm = ({ onClose }: FeedbackFormProps) => {
         <CardTitle className="text-white">Feedback</CardTitle>
         <CardDescription className="text-white/80">
           Help us improve your experience
+          <p className="mt-2 text-sm text-white/60">Your feedback is completely anonymous and securely stored. We value your privacy.</p>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -115,7 +116,7 @@ export const FeedbackForm = ({ onClose }: FeedbackFormProps) => {
 
           <div>
             <label className="block text-white mb-2">
-              How much would you be willing to pay for a premium version? ($)
+              How much would you be willing to pay for a premium version per month? ($)
             </label>
             <input
               type="number"
