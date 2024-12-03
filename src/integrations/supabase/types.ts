@@ -33,6 +33,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          bugs: string | null
+          created_at: string
+          feature_requests: string | null
+          id: number
+          price_willing_to_pay: number | null
+          rating: number
+          user_id: string | null
+        }
+        Insert: {
+          bugs?: string | null
+          created_at?: string
+          feature_requests?: string | null
+          id?: number
+          price_willing_to_pay?: number | null
+          rating: number
+          user_id?: string | null
+        }
+        Update: {
+          bugs?: string | null
+          created_at?: string
+          feature_requests?: string | null
+          id?: number
+          price_willing_to_pay?: number | null
+          rating?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           frequency: string | null

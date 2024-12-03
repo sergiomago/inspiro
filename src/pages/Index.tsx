@@ -4,14 +4,16 @@ import { QuoteCard } from "@/components/QuoteCard"
 import { Settings } from "@/components/Settings"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Settings as SettingsIcon, Heart } from "lucide-react"
+import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
 import { FavoriteQuotes } from "@/components/FavoriteQuotes"
 import { Logo } from "@/components/Logo"
+import { FeedbackForm } from "@/components/FeedbackForm"
 
 export default function Index() {
   const { user, loading } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
   const [showFavorites, setShowFavorites] = useState(false)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   if (loading) {
     return (
@@ -27,7 +29,7 @@ export default function Index() {
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
           <div className="relative z-10 text-center space-y-6">
             <Logo />
-            <p className="text-primary-dark/80 mb-8">Daily inspiration for your journey</p>
+            <p className="text-primary-dark/80 mb-8">Inspire Your Day, One Quote at a Time</p>
             <AuthForm />
           </div>
         </div>
@@ -36,6 +38,14 @@ export default function Index() {
           <div className="flex justify-between items-center py-8">
             <Logo />
             <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowFeedback(true)}
+                className="hover:text-primary transition-colors text-primary-dark"
+              >
+                <MessageSquare className="h-5 w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -59,6 +69,12 @@ export default function Index() {
             <QuoteCard />
           </div>
 
+          <footer className="py-4 text-center text-primary-dark/80">
+            <a href="https://whytoai.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+              Developed by Why to AI
+            </a>
+          </footer>
+
           {showSettings && (
             <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="w-full max-w-md">
@@ -71,6 +87,14 @@ export default function Index() {
             <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="w-full max-w-2xl">
                 <FavoriteQuotes onClose={() => setShowFavorites(false)} />
+              </div>
+            </div>
+          )}
+
+          {showFeedback && (
+            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="w-full max-w-md">
+                <FeedbackForm onClose={() => setShowFeedback(false)} />
               </div>
             </div>
           )}
