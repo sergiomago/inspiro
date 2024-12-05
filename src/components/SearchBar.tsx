@@ -12,7 +12,9 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    onSearch(searchTerm)
+    if (searchTerm.trim()) {
+      onSearch(searchTerm.trim())
+    }
   }
 
   return (
@@ -24,7 +26,12 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="bg-white/90"
       />
-      <Button type="submit" variant="ghost" size="icon">
+      <Button 
+        type="submit" 
+        variant="ghost" 
+        size="icon"
+        className="hover:text-primary transition-colors"
+      >
         <Search className="h-5 w-5" />
       </Button>
     </form>
