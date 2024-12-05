@@ -17,6 +17,7 @@ export default function Index() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
 
   if (loading) {
     return (
@@ -73,8 +74,11 @@ export default function Index() {
         </div>
 
         <div className="flex-grow flex flex-col items-center justify-center gap-6">
-          <SearchBar />
-          <QuoteCard onNeedAuth={() => setShowAuthDialog(true)} />
+          <SearchBar onSearch={setSearchTerm} />
+          <QuoteCard 
+            onNeedAuth={() => setShowAuthDialog(true)} 
+            searchTerm={searchTerm}
+          />
         </div>
 
         <footer className="py-4 text-center text-primary-dark/80">

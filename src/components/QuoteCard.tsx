@@ -10,12 +10,14 @@ interface QuoteCardProps {
   quote?: string;
   author?: string;
   onNeedAuth?: () => void;
+  searchTerm?: string;
 }
 
 export const QuoteCard = ({ 
   quote: initialQuote = "Welcome to Inspiro! Click refresh to generate your first inspirational quote.", 
   author: initialAuthor = "Inspiro",
-  onNeedAuth 
+  onNeedAuth,
+  searchTerm
 }: QuoteCardProps) => {
   const [quote, setQuote] = useState(initialQuote);
   const [author, setAuthor] = useState(initialAuthor);
@@ -39,7 +41,7 @@ export const QuoteCard = ({
         }
       }
       
-      const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType);
+      const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType, searchTerm);
       setQuote(newQuote);
       setAuthor(newAuthor);
     } catch (error) {

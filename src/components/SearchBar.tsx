@@ -3,13 +3,16 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
 
-export const SearchBar = () => {
+interface SearchBarProps {
+  onSearch: (searchTerm: string) => void;
+}
+
+export const SearchBar = ({ onSearch }: SearchBarProps) => {
   const [searchTerm, setSearchTerm] = useState("")
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // The search term will be used by the QuoteCard component through a shared state
-    // This will be implemented in the next step
+    onSearch(searchTerm)
   }
 
   return (
