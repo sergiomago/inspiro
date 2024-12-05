@@ -18,8 +18,31 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
-export const generateQuote = async (type: string = 'mixed'): Promise<{ quote: string; author: string }> => {
+export const generateQuote = async (type: string = 'mixed', searchTerm?: string): Promise<{ quote: string; author: string }> => {
   try {
+    if (searchTerm) {
+      const completion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are a quote generator that creates or finds inspiring quotes based on specific topics, keywords, or authors."
+          },
+          {
+            role: "user",
+            content: `Generate or find a relevant quote about: ${searchTerm}`
+          }
+        ],
+        model: "gpt-4o-mini",
+      });
+
+      const response = completion.choices[0]?.message?.content || "Could not generate quote";
+      const parts = response.split(' - ');
+      return {
+        quote: parts[0].replace(/["']/g, ''),
+        author: parts[1] || "Unknown"
+      };
+    }
+
     if (type === 'human') {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return {
@@ -51,7 +74,7 @@ export const generateQuote = async (type: string = 'mixed'): Promise<{ quote: st
           content: "Generate an inspiring quote"
         }
       ],
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
     });
 
     return {

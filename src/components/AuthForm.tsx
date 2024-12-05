@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 
-export function AuthForm() {
+interface AuthFormProps {
+  onSuccess?: () => void;
+}
+
+export function AuthForm({ onSuccess }: AuthFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSignUp, setIsSignUp] = useState(false)
@@ -28,6 +32,7 @@ export function AuthForm() {
           description: "You have successfully signed in",
         })
       }
+      onSuccess?.();
     } catch (error) {
       toast({
         title: "Error",

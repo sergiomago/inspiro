@@ -9,11 +9,13 @@ import { supabase } from "@/lib/supabase";
 interface QuoteCardProps {
   quote?: string;
   author?: string;
+  onNeedAuth?: () => void;
 }
 
 export const QuoteCard = ({ 
   quote: initialQuote = "Welcome to Inspiro! Click refresh to generate your first inspirational quote.", 
-  author: initialAuthor = "Inspiro" 
+  author: initialAuthor = "Inspiro",
+  onNeedAuth 
 }: QuoteCardProps) => {
   const [quote, setQuote] = useState(initialQuote);
   const [author, setAuthor] = useState(initialAuthor);
@@ -23,14 +25,14 @@ export const QuoteCard = ({
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
+      
       const { data } = await supabase
         .from('user_settings')
         .select('quote_source')
-        .eq('user_id', user.id);
+        .eq('user_id', user?.id || '')
+        .single();
       
-      const quoteType = data && data.length > 0 ? data[0].quote_source : 'mixed';
+      const quoteType = data?.quote_source || 'mixed';
       const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType);
       setQuote(newQuote);
       setAuthor(newAuthor);
@@ -44,7 +46,10 @@ export const QuoteCard = ({
   const handleFavorite = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
+      if (!user) {
+        onNeedAuth?.();
+        return;
+      }
 
       const { error } = await supabase
         .from('favorites')

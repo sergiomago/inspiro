@@ -8,12 +8,15 @@ import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
 import { FavoriteQuotes } from "@/components/FavoriteQuotes"
 import { Logo } from "@/components/Logo"
 import { FeedbackForm } from "@/components/FeedbackForm"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { SearchBar } from "@/components/SearchBar"
 
 export default function Index() {
   const { user, loading } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
   const [showFavorites, setShowFavorites] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
 
   if (loading) {
     return (
@@ -25,81 +28,97 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2F0FB] via-[#E5DEFF] to-[#D6BCFA]">
-      {!user ? (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          <div className="relative z-10 text-center space-y-6">
-            <Logo />
-            <p className="text-primary-dark/80 mb-8">Inspire Your Day, One Quote at a Time</p>
-            <AuthForm />
+      <div className="container mx-auto px-4 min-h-screen flex flex-col">
+        <div className="flex justify-between items-center py-8">
+          <Logo />
+          <div className="flex gap-2">
+            {user && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowFeedback(true)}
+                  className="hover:text-primary transition-colors text-primary-dark"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSettings(s => !s)}
+                  className="hover:text-primary transition-colors text-primary-dark"
+                >
+                  <SettingsIcon className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowFavorites(true)}
+                  className="hover:text-primary transition-colors text-primary-dark"
+                >
+                  <Heart className="h-5 w-5" />
+                </Button>
+              </>
+            )}
+            {!user && (
+              <Button
+                variant="outline"
+                onClick={() => setShowAuthDialog(true)}
+                className="hover:text-primary transition-colors text-primary-dark"
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
-      ) : (
-        <div className="container mx-auto px-4 min-h-screen flex flex-col">
-          <div className="flex justify-between items-center py-8">
-            <Logo />
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowFeedback(true)}
-                className="hover:text-primary transition-colors text-primary-dark"
-              >
-                <MessageSquare className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSettings(s => !s)}
-                className="hover:text-primary transition-colors text-primary-dark"
-              >
-                <SettingsIcon className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowFavorites(true)}
-                className="hover:text-primary transition-colors text-primary-dark"
-              >
-                <Heart className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
 
-          <div className="flex-grow flex items-center justify-center">
-            <QuoteCard />
-          </div>
-
-          <footer className="py-4 text-center text-primary-dark/80">
-            <a href="https://whytoai.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-              Developed by Why to AI
-            </a>
-          </footer>
-
-          {showSettings && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                <Settings onClose={() => setShowSettings(false)} />
-              </div>
-            </div>
-          )}
-
-          {showFavorites && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="w-full max-w-2xl">
-                <FavoriteQuotes onClose={() => setShowFavorites(false)} />
-              </div>
-            </div>
-          )}
-
-          {showFeedback && (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                <FeedbackForm onClose={() => setShowFeedback(false)} />
-              </div>
-            </div>
-          )}
+        <div className="flex-grow flex flex-col items-center justify-center gap-6">
+          <SearchBar />
+          <QuoteCard onNeedAuth={() => setShowAuthDialog(true)} />
         </div>
-      )}
+
+        <footer className="py-4 text-center text-primary-dark/80">
+          <a href="https://whytoai.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+            Developed by Why to AI
+          </a>
+        </footer>
+
+        {showSettings && user && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+              <Settings onClose={() => setShowSettings(false)} />
+            </div>
+          </div>
+        )}
+
+        {showFavorites && user && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl">
+              <FavoriteQuotes onClose={() => setShowFavorites(false)} />
+            </div>
+          </div>
+        )}
+
+        {showFeedback && user && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-md">
+              <FeedbackForm onClose={() => setShowFeedback(false)} />
+            </div>
+          </div>
+        )}
+
+        <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Sign in to save favorites</DialogTitle>
+              <DialogDescription>
+                Create an account or sign in to save your favorite quotes and access them anytime.
+              </DialogDescription>
+            </DialogHeader>
+            <AuthForm onSuccess={() => setShowAuthDialog(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
