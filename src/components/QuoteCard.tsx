@@ -25,18 +25,25 @@ export const QuoteCard = ({
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      let quoteType = 'mixed'; // Default quote type
+
+      if (user) {
+        const { data } = await supabase
+          .from('user_settings')
+          .select('quote_source')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (data) {
+          quoteType = data.quote_source;
+        }
+      }
       
-      const { data } = await supabase
-        .from('user_settings')
-        .select('quote_source')
-        .eq('user_id', user?.id || '')
-        .single();
-      
-      const quoteType = data?.quote_source || 'mixed';
       const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType);
       setQuote(newQuote);
       setAuthor(newAuthor);
     } catch (error) {
+      console.error('Error generating quote:', error);
       toast.error("Failed to generate quote. Please try again.");
     } finally {
       setIsLoading(false);
