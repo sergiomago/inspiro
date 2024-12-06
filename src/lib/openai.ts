@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 
-const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || 'default-development-key';
+const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+if (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here') {
+  console.error('OpenAI API key is not configured. Please set VITE_OPENAI_API_KEY in your .env file');
+}
 
 export const openai = new OpenAI({
   apiKey: openaiApiKey,
@@ -20,6 +24,10 @@ const classicQuotes = [
 
 export const generateQuote = async (type: string = 'mixed', searchTerm?: string): Promise<{ quote: string; author: string }> => {
   try {
+    if (!openaiApiKey || openaiApiKey === 'your-openai-api-key-here') {
+      throw new Error('OpenAI API key not configured');
+    }
+
     if (searchTerm) {
       const completion = await openai.chat.completions.create({
         messages: [
@@ -39,7 +47,7 @@ export const generateQuote = async (type: string = 'mixed', searchTerm?: string)
       const parts = response.split(' - ');
       return {
         quote: parts[0].replace(/["']/g, ''),
-        author: parts[1] || "Unknown"
+        author: parts[1] || "Anonymous"
       };
     }
 
