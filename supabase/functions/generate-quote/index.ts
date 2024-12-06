@@ -27,11 +27,11 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm } = await req.json()
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
 
-    console.log('Request received:', { type, searchTerm }); // Debug log
+    console.log('Request received:', { type, searchTerm });
 
     if (!openAIApiKey) {
       console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured in Edge Function secrets')
+      throw new Error('OpenAI API key not configured')
     }
 
     // Return classic quote for 'human' type or 50% of 'mixed' type requests
@@ -60,7 +60,7 @@ serve(async (req) => {
       }
     ]
 
-    console.log('Sending request to OpenAI:', { messages }); // Debug log
+    console.log('Sending request to OpenAI:', { messages });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -78,12 +78,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', errorData); // Debug log
+      console.error('OpenAI API error:', errorData);
       throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
     }
 
     const data = await response.json()
-    console.log('OpenAI response:', data); // Debug log
+    console.log('OpenAI response:', data);
 
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       console.error('Unexpected OpenAI response format:', data);
@@ -104,7 +104,7 @@ serve(async (req) => {
       author: parts[1]
     }
 
-    console.log('Returning result:', result); // Debug log
+    console.log('Returning result:', result);
 
     return new Response(
       JSON.stringify(result),
@@ -117,9 +117,7 @@ serve(async (req) => {
     const randomIndex = Math.floor(Math.random() * classicQuotes.length)
     return new Response(
       JSON.stringify(classicQuotes[randomIndex]),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
