@@ -27,6 +27,14 @@ export default function Index() {
     );
   }
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
+  const handleResetFilter = () => {
+    setSearchTerm("");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2F0FB] via-[#E5DEFF] to-[#D6BCFA]">
       <div className="container mx-auto px-4 min-h-screen flex flex-col">
@@ -74,7 +82,11 @@ export default function Index() {
         </div>
 
         <div className="flex-grow flex flex-col items-center justify-center gap-6">
-          <SearchBar onSearch={setSearchTerm} />
+          <SearchBar 
+            onSearch={handleSearch} 
+            currentFilter={searchTerm}
+            onReset={handleResetFilter}
+          />
           <QuoteCard 
             onNeedAuth={() => setShowAuthDialog(true)} 
             searchTerm={searchTerm}

@@ -12,7 +12,7 @@ export const QuoteContent = ({ quote, author }: QuoteContentProps) => {
         "{quote}"
       </p>
       <p className="text-right text-sm text-white/90 font-medium">
-        - {author}
+        - {author || "Anonymous"}
       </p>
     </div>
   );
