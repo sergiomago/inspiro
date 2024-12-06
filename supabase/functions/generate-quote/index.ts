@@ -27,19 +27,15 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm } = await req.json()
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
 
+    console.log('Request received:', { type, searchTerm }); // Debug log
+
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured in Edge Function secrets')
     }
 
-    if (type === 'human') {
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length)
-      return new Response(
-        JSON.stringify(classicQuotes[randomIndex]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (type === 'mixed' && Math.random() < 0.5) {
+    // Return classic quote for 'human' type or 50% of 'mixed' type requests
+    if (type === 'human' || (type === 'mixed' && Math.random() < 0.5)) {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length)
       return new Response(
         JSON.stringify(classicQuotes[randomIndex]),
@@ -48,8 +44,8 @@ serve(async (req) => {
     }
 
     const systemPrompt = type === 'ai' 
-      ? "You are an AI wisdom generator. Create original, inspiring quotes that sound modern and fresh. These should be completely new, AI-generated quotes."
-      : "You are a quote generator that creates inspiring and meaningful quotes. Make them sound natural and impactful."
+      ? "You are an AI wisdom generator. Create original, inspiring quotes that sound modern and fresh. These should be completely new, AI-generated quotes. Always respond in the format: 'quote - author'"
+      : "You are a quote generator that creates inspiring and meaningful quotes. Make them sound natural and impactful. Always respond in the format: 'quote - author'"
 
     const messages = [
       {
@@ -58,9 +54,13 @@ serve(async (req) => {
       },
       {
         role: "user",
-        content: searchTerm ? `Generate an inspiring quote about: ${searchTerm}` : "Generate an inspiring quote"
+        content: searchTerm 
+          ? `Generate an inspiring quote about: ${searchTerm}. Respond in the format: 'quote - author'` 
+          : "Generate an inspiring quote. Respond in the format: 'quote - author'"
       }
     ]
+
+    console.log('Sending request to OpenAI:', { messages }); // Debug log
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -69,30 +69,56 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: messages,
+        temperature: 0.7,
+        max_tokens: 100,
       }),
     })
 
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData); // Debug log
+      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+    }
+
     const data = await response.json()
-    const generatedText = data.choices[0].message.content
+    console.log('OpenAI response:', data); // Debug log
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected OpenAI response format:', data);
+      throw new Error('Invalid response format from OpenAI');
+    }
+
+    const generatedText = data.choices[0].message.content.trim()
     const parts = generatedText.split(' - ')
 
+    // Ensure we have both quote and author
+    if (parts.length < 2) {
+      console.error('Invalid quote format:', generatedText);
+      throw new Error('Invalid quote format received');
+    }
+
+    const result = {
+      quote: parts[0].replace(/["']/g, ''),
+      author: parts[1]
+    }
+
+    console.log('Returning result:', result); // Debug log
+
     return new Response(
-      JSON.stringify({
-        quote: parts[0].replace(/["']/g, ''),
-        author: parts[1] || "Inspiro AI"
-      }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-quote function:', error)
+    // Return a classic quote as fallback
+    const randomIndex = Math.floor(Math.random() * classicQuotes.length)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify(classicQuotes[randomIndex]),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
       }
     )
   }
