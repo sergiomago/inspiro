@@ -2,14 +2,20 @@ import { useAuth } from "@/hooks/useAuth"
 import { AuthForm } from "@/components/AuthForm"
 import { QuoteCard } from "@/components/QuoteCard"
 import { Settings } from "@/components/Settings"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
+import { Settings as SettingsIcon, Heart, MessageSquare, Filter } from "lucide-react"
 import { FavoriteQuotes } from "@/components/FavoriteQuotes"
 import { Logo } from "@/components/Logo"
 import { FeedbackForm } from "@/components/FeedbackForm"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SearchBar } from "@/components/SearchBar"
+import { supabase } from "@/lib/supabase"
+
+interface SavedFilter {
+  id: number;
+  filter_text: string;
+}
 
 export default function Index() {
   const { user, loading } = useAuth()
@@ -17,23 +23,58 @@ export default function Index() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([])
+
+  useEffect(() => {
+    if (user) {
+      loadSavedFilters()
+    }
+  }, [user])
+
+  const loadSavedFilters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_filters')
+        .select('id, filter_text')
+      
+      if (error) throw error
+      setSavedFilters(data || [])
+    } catch (error) {
+      console.error('Error loading filters:', error)
+    }
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+  }
+
+  const handleResetFilter = () => {
+    setSearchTerm("")
+  }
+
+  const handleDeleteFilter = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('user_filters')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      await loadSavedFilters()
+    } catch (error) {
+      console.error('Error deleting filter:', error)
+    }
+  }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-pulse text-primary">Loading...</div>
       </div>
-    );
+    )
   }
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-  };
-
-  const handleResetFilter = () => {
-    setSearchTerm("");
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2F0FB] via-[#E5DEFF] to-[#D6BCFA]">
@@ -43,6 +84,14 @@ export default function Index() {
           <div className="flex gap-2">
             {user && (
               <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowFilters(true)}
+                  className="hover:text-primary transition-colors text-primary-dark"
+                >
+                  <Filter className="h-5 w-5" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -123,6 +172,46 @@ export default function Index() {
           </div>
         )}
 
+        {showFilters && user && (
+          <Dialog open={showFilters} onOpenChange={setShowFilters}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Saved Filters</DialogTitle>
+                <DialogDescription>
+                  Your saved search filters. Click on a filter to use it.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                {savedFilters.map((filter) => (
+                  <div key={filter.id} className="flex items-center justify-between p-2 bg-white/50 rounded-lg">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchTerm(filter.filter_text)
+                        setShowFilters(false)
+                      }}
+                      className="text-left"
+                    >
+                      {filter.filter_text}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteFilter(filter.id)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {savedFilters.length === 0 && (
+                  <p className="text-center text-muted-foreground">No saved filters yet.</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
         <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -136,5 +225,5 @@ export default function Index() {
         </Dialog>
       </div>
     </div>
-  );
+  )
 }

@@ -63,6 +63,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_filters: {
+        Row: {
+          created_at: string
+          filter_text: string
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          filter_text: string
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          filter_text?: string
+          id?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           frequency: string | null

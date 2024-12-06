@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Save, X } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 interface SearchBarProps {
   onSearch: (searchTerm: string) => void;
@@ -19,6 +21,23 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
     }
   }
 
+  const handleSaveFilter = async () => {
+    try {
+      const { error } = await supabase
+        .from('user_filters')
+        .insert({ filter_text: currentFilter })
+
+      if (error) throw error
+      toast.success("Filter saved successfully!")
+    } catch (error: any) {
+      if (error.message.includes('more than 3 filters')) {
+        toast.error("You can only save up to 3 filters")
+      } else {
+        toast.error("Failed to save filter")
+      }
+    }
+  }
+
   return (
     <div className="w-full max-w-md space-y-2">
       <form onSubmit={handleSearch} className="flex gap-2">
@@ -29,14 +48,17 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
           onChange={(e) => setSearchTerm(e.target.value)}
           className="bg-white/90"
         />
-        <Button 
-          type="submit" 
-          variant="ghost" 
-          size="icon"
-          className="hover:text-primary transition-colors"
-        >
-          <Save className="h-5 w-5" />
-        </Button>
+        {currentFilter && (
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon"
+            onClick={handleSaveFilter}
+            className="hover:text-primary transition-colors"
+          >
+            <Save className="h-5 w-5" />
+          </Button>
+        )}
       </form>
       {currentFilter && (
         <div className="flex items-center gap-2 text-sm text-primary-dark/80">
