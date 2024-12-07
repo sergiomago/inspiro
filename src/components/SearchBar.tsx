@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Save, X } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 
 interface SearchBarProps {
