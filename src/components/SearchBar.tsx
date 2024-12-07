@@ -23,17 +23,9 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
 
   const handleSaveFilter = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        toast.error("Please sign in to save filters")
-        return
-      }
-
       const { error } = await supabase
         .from('user_filters')
         .insert({ 
-          user_id: user.id,
           filter_text: currentFilter 
         })
 
