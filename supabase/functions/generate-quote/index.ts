@@ -24,42 +24,43 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Request received:', await req.clone().text());
-    const { type = 'mixed', searchTerm } = await req.json()
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
+    
+    const { type = 'mixed', searchTerm } = JSON.parse(requestBody);
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     console.log('Processing request:', { type, searchTerm });
 
     if (!openAIApiKey) {
       console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured')
+      throw new Error('OpenAI API key not configured');
     }
 
     // If no search term is provided, return a classic quote
     if (!searchTerm) {
       console.log('No search term provided, returning classic quote');
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length)
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return new Response(
         JSON.stringify(classicQuotes[randomIndex]),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
-
-    let systemPrompt = `You are a quote generator that creates inspiring and meaningful quotes specifically about: ${searchTerm}. 
-    The quotes should deeply reflect this theme while remaining inspirational and meaningful. 
-    If the search term is an author's name, prioritize returning actual quotes from that author.
-    Always respond in the format: 'quote - author'`;
 
     const messages = [
       {
         role: "system",
-        content: systemPrompt
+        content: `You are a quote generator that creates inspiring and meaningful quotes. 
+        If the search term '${searchTerm}' appears to be an author's name, return a real quote from that author.
+        Otherwise, generate a quote that deeply reflects the theme: ${searchTerm}.
+        The quote should be profound and meaningful.
+        Respond in exactly this format: quote - author`
       },
       {
         role: "user",
         content: `Generate a unique and inspiring quote about ${searchTerm}`
       }
-    ]
+    ];
 
     console.log('Sending request to OpenAI:', { messages });
 
@@ -70,30 +71,32 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: messages,
         temperature: 0.9,
         max_tokens: 150,
       }),
-    })
+    });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status} ${errorData}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error response:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
     console.log('OpenAI response:', data);
 
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    if (!data.choices?.[0]?.message?.content) {
       console.error('Unexpected OpenAI response format:', data);
       throw new Error('Invalid response format from OpenAI');
     }
 
-    const generatedText = data.choices[0].message.content.trim()
-    const parts = generatedText.split(' - ')
+    const generatedText = data.choices[0].message.content.trim();
+    console.log('Generated text:', generatedText);
 
+    const parts = generatedText.split(' - ');
+    
     if (parts.length < 2) {
       console.error('Invalid quote format:', generatedText);
       throw new Error('Invalid quote format received');
@@ -102,22 +105,32 @@ serve(async (req) => {
     const result = {
       quote: parts[0].replace(/["']/g, ''),
       author: parts[1]
-    }
+    };
 
     console.log('Returning result:', result);
 
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
 
   } catch (error) {
-    console.error('Error in generate-quote function:', error)
-    // Return a classic quote as fallback
-    const randomIndex = Math.floor(Math.random() * classicQuotes.length)
+    console.error('Error in generate-quote function:', error);
+    // Only fall back to classic quotes for specific errors
+    if (error.message.includes('OpenAI API key not configured')) {
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+      return new Response(
+        JSON.stringify(classicQuotes[randomIndex]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // For other errors, return the error to the client
     return new Response(
-      JSON.stringify(classicQuotes[randomIndex]),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 })
