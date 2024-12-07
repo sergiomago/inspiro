@@ -26,7 +26,8 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
       const { error } = await supabase
         .from('user_filters')
         .insert({ 
-          filter_text: currentFilter 
+          filter_text: currentFilter,
+          user_id: null // explicitly set user_id to null for anonymous users
         })
 
       if (error) {
