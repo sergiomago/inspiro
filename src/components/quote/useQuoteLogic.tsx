@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { generateQuote } from "@/lib/openai";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useQuoteLogic = (
   initialQuote: string,
@@ -14,6 +14,7 @@ export const useQuoteLogic = (
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRefresh = async () => {
+    console.log("handleRefresh called with searchTerm:", searchTerm);
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,7 +32,10 @@ export const useQuoteLogic = (
         }
       }
       
+      console.log("Calling generateQuote with:", { quoteType, searchTerm });
       const { quote: newQuote, author: newAuthor } = await generateQuote(quoteType, searchTerm);
+      console.log("Generated quote:", { newQuote, newAuthor });
+      
       setQuote(newQuote);
       setAuthor(newAuthor);
     } catch (error) {

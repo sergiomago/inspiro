@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 const classicQuotes = [
   { quote: "Be the change you wish to see in the world.", author: "Mahatma Gandhi" },
@@ -12,10 +12,14 @@ const classicQuotes = [
 ];
 
 export const generateQuote = async (type: string = 'mixed', searchTerm?: string): Promise<{ quote: string; author: string }> => {
+  console.log("generateQuote called with:", { type, searchTerm });
+  
   try {
     const { data, error } = await supabase.functions.invoke('generate-quote', {
       body: { type, searchTerm }
     });
+
+    console.log("Edge function response:", { data, error });
 
     if (error) {
       console.error('Error calling generate-quote function:', error);
