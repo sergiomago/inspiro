@@ -23,18 +23,32 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
 
   const handleSaveFilter = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        toast.error("Please sign in to save filters")
+        return
+      }
+
       const { error } = await supabase
         .from('user_filters')
-        .insert({ filter_text: currentFilter })
+        .insert({ 
+          user_id: user.id,
+          filter_text: currentFilter 
+        })
 
-      if (error) throw error
-      toast.success("Filter saved successfully!")
-    } catch (error: any) {
-      if (error.message.includes('more than 3 filters')) {
-        toast.error("You can only save up to 3 filters")
+      if (error) {
+        if (error.message.includes('more than 3 filters')) {
+          toast.error("You can only save up to 3 filters. Please delete one to save a new filter.")
+        } else {
+          throw error
+        }
       } else {
-        toast.error("Failed to save filter")
+        toast.success("Filter saved successfully!")
       }
+    } catch (error: any) {
+      console.error('Error saving filter:', error)
+      toast.error("Failed to save filter")
     }
   }
 

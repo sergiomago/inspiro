@@ -18,7 +18,6 @@ const classicQuotes = [
 ];
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -34,8 +33,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured')
     }
 
-    // Return classic quote for 'human' type or 50% of 'mixed' type requests
-    if (type === 'human' || (type === 'mixed' && Math.random() < 0.5)) {
+    // Return classic quote for 'human' type or 50% of 'mixed' type requests without filters
+    if (!searchTerm && (type === 'human' || (type === 'mixed' && Math.random() < 0.5))) {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length)
       return new Response(
         JSON.stringify(classicQuotes[randomIndex]),
@@ -43,9 +42,16 @@ serve(async (req) => {
       )
     }
 
-    const systemPrompt = type === 'ai' 
-      ? "You are an AI wisdom generator. Create original, inspiring quotes that sound modern and fresh. These should be completely new, AI-generated quotes. Always respond in the format: 'quote - author'"
-      : "You are a quote generator that creates inspiring and meaningful quotes. Make them sound natural and impactful. Always respond in the format: 'quote - author'"
+    let systemPrompt = type === 'ai' 
+      ? "You are an AI wisdom generator that creates original, inspiring quotes that sound modern and fresh. These should be completely new, AI-generated quotes."
+      : "You are a quote generator that creates inspiring and meaningful quotes. Make them sound natural and impactful."
+
+    // Add filter context to system prompt
+    if (searchTerm) {
+      systemPrompt += ` Focus on creating quotes specifically about: ${searchTerm}. The quotes should deeply reflect this theme while remaining inspirational and meaningful.`
+    }
+
+    systemPrompt += " Always respond in the format: 'quote - author'. Make sure each quote is unique and hasn't been generated before. Avoid common clichés and create truly original content."
 
     const messages = [
       {
@@ -54,9 +60,7 @@ serve(async (req) => {
       },
       {
         role: "user",
-        content: searchTerm 
-          ? `Generate an inspiring quote about: ${searchTerm}. Respond in the format: 'quote - author'` 
-          : "Generate an inspiring quote. Respond in the format: 'quote - author'"
+        content: "Generate a unique and inspiring quote that hasn't been used before."
       }
     ]
 
@@ -69,9 +73,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: messages,
-        temperature: 0.7,
+        temperature: 0.9, // Increased for more creativity
         max_tokens: 100,
       }),
     })
@@ -93,7 +97,6 @@ serve(async (req) => {
     const generatedText = data.choices[0].message.content.trim()
     const parts = generatedText.split(' - ')
 
-    // Ensure we have both quote and author
     if (parts.length < 2) {
       console.error('Invalid quote format:', generatedText);
       throw new Error('Invalid quote format received');
@@ -113,7 +116,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-quote function:', error)
-    // Return a classic quote as fallback
     const randomIndex = Math.floor(Math.random() * classicQuotes.length)
     return new Response(
       JSON.stringify(classicQuotes[randomIndex]),
