@@ -30,7 +30,8 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm } = JSON.parse(requestBody);
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    console.log('Processing request:', { type, searchTerm });
+    console.log('Processing request with type and searchTerm:', { type, searchTerm });
+    console.log('OpenAI API Key present:', !!openAIApiKey);
 
     if (!openAIApiKey) {
       console.error('OpenAI API key not configured');
@@ -72,7 +73,7 @@ serve(async (req) => {
       }
     ];
 
-    console.log('Sending request to OpenAI:', { messages });
+    console.log('Sending request to OpenAI with messages:', messages);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -93,14 +94,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error response:', errorText);
-      
-      // If we hit quota limits or any other OpenAI error, fall back to classic quotes
-      console.log('Falling back to classic quotes due to OpenAI API error');
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return new Response(
-        JSON.stringify(classicQuotes[randomIndex]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
