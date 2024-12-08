@@ -81,7 +81,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: messages,
         temperature: 1.2, // Increased for more creativity and variety
         max_tokens: 150,
