@@ -50,15 +50,25 @@ serve(async (req) => {
     const messages = [
       {
         role: "system",
-        content: `You are a quote generator that creates inspiring and meaningful quotes. 
-        If the search term '${searchTerm}' appears to be an author's name, return a real quote from that author.
-        Otherwise, generate a quote that deeply reflects the theme: ${searchTerm}.
-        The quote should be profound and meaningful.
+        content: `You are a quote generator that creates unique, diverse, and meaningful quotes. 
+        Important instructions:
+        1. NEVER repeat quotes that have been commonly used or are well-known.
+        2. If the search term '${searchTerm}' appears to be an author's name:
+           - Generate a quote in their style but DO NOT use their actual quotes
+           - Maintain their tone and philosophy while creating something new
+        3. If '${searchTerm}' is a theme or topic:
+           - Create a completely original quote that deeply explores this theme
+           - Ensure the quote is profound, unique, and not cliché
+           - Assign it to a fictional but credible author with a realistic name
+        4. Each generated quote must be different from previous ones
+        5. Avoid common phrases and overused metaphors
+        6. Make the quote concise but impactful
+
         Respond in exactly this format: quote - author`
       },
       {
         role: "user",
-        content: `Generate a unique and inspiring quote about ${searchTerm}`
+        content: `Generate a unique and inspiring quote about ${searchTerm}. Remember to be original and avoid common phrases.`
       }
     ];
 
@@ -73,8 +83,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4',
         messages: messages,
-        temperature: 0.9,
+        temperature: 1.2, // Increased for more creativity and variety
         max_tokens: 150,
+        presence_penalty: 0.8, // Added to encourage unique content
+        frequency_penalty: 0.8, // Added to discourage repetition
       }),
     });
 
@@ -116,7 +128,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in generate-quote function:', error);
-    // Only fall back to classic quotes for specific errors
+    
+    // Only fall back to classic quotes for API key configuration errors
     if (error.message.includes('OpenAI API key not configured')) {
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return new Response(
@@ -124,6 +137,7 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
     // For other errors, return the error to the client
     return new Response(
       JSON.stringify({ error: error.message }),
