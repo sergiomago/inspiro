@@ -11,8 +11,12 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
-export const generateQuote = async (type: string = 'mixed', searchTerm?: string): Promise<{ quote: string; author: string }> => {
-  console.log("generateQuote called with:", { type, searchTerm });
+export const generateQuote = async (
+  type: string = 'mixed',
+  searchTerm?: string,
+  filterType: string = 'topic'
+): Promise<{ quote: string; author: string }> => {
+  console.log("generateQuote called with:", { type, searchTerm, filterType });
   
   try {
     // For mixed type without search term, randomly choose between AI and classic
@@ -26,7 +30,7 @@ export const generateQuote = async (type: string = 'mixed', searchTerm?: string)
 
     // Always use AI for search terms or when specifically requested
     const { data, error } = await supabase.functions.invoke('generate-quote', {
-      body: { type, searchTerm }
+      body: { type, searchTerm, filterType }
     });
 
     console.log("Edge function response:", { data, error });

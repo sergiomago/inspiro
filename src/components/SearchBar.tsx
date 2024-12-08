@@ -4,20 +4,22 @@ import { Button } from "@/components/ui/button"
 import { Save, X } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface SearchBarProps {
-  onSearch: (searchTerm: string) => void;
+  onSearch: (searchTerm: string, filterType: string) => void;
   currentFilter: string;
   onReset: () => void;
 }
 
 export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) => {
   const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState<string>("topic")
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchTerm.trim()) {
-      onSearch(searchTerm.trim())
+      onSearch(searchTerm.trim(), filterType)
       await handleSaveFilter()
     }
   }
@@ -29,7 +31,7 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
       const { error } = await supabase
         .from('user_filters')
         .insert({ 
-          filter_text: searchTerm.trim(),
+          filter_text: `${filterType}:${searchTerm.trim()}`,
           user_id: null // explicitly set user_id to null for anonymous users
         })
 
@@ -57,9 +59,19 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
   return (
     <div className="w-full max-w-md space-y-2">
       <form onSubmit={handleSearch} className="flex gap-2">
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[140px] bg-white/90">
+            <SelectValue placeholder="Filter by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="author">Author</SelectItem>
+            <SelectItem value="topic">Topic</SelectItem>
+            <SelectItem value="keyword">Keyword</SelectItem>
+          </SelectContent>
+        </Select>
         <Input
           type="text"
-          placeholder="Filter quotes by topic, theme, or style..."
+          placeholder={`Search by ${filterType}...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyPress={handleKeyPress}
