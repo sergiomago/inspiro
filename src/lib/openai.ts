@@ -15,6 +15,16 @@ export const generateQuote = async (type: string = 'mixed', searchTerm?: string)
   console.log("generateQuote called with:", { type, searchTerm });
   
   try {
+    // For mixed type without search term, randomly choose between AI and classic
+    if (type === 'mixed' && !searchTerm) {
+      const useClassic = Math.random() < 0.3; // 30% chance for classic quotes
+      if (useClassic) {
+        const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+        return classicQuotes[randomIndex];
+      }
+    }
+
+    // Always use AI for search terms or when specifically requested
     const { data, error } = await supabase.functions.invoke('generate-quote', {
       body: { type, searchTerm }
     });
@@ -23,7 +33,6 @@ export const generateQuote = async (type: string = 'mixed', searchTerm?: string)
 
     if (error) {
       console.error('Error calling generate-quote function:', error);
-      // Fallback to classic quotes if the function fails
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return classicQuotes[randomIndex];
     }
@@ -31,7 +40,6 @@ export const generateQuote = async (type: string = 'mixed', searchTerm?: string)
     return data;
   } catch (error) {
     console.error('Error generating quote:', error);
-    // Fallback to classic quotes if there's an error
     const randomIndex = Math.floor(Math.random() * classicQuotes.length);
     return classicQuotes[randomIndex];
   }

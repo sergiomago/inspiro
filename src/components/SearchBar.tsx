@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Save, X } from "lucide-react"
@@ -14,19 +14,22 @@ interface SearchBarProps {
 export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) => {
   const [searchTerm, setSearchTerm] = useState("")
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
     if (searchTerm.trim()) {
       onSearch(searchTerm.trim())
+      await handleSaveFilter()
     }
   }
 
   const handleSaveFilter = async () => {
+    if (!searchTerm.trim()) return;
+    
     try {
       const { error } = await supabase
         .from('user_filters')
         .insert({ 
-          filter_text: currentFilter,
+          filter_text: searchTerm.trim(),
           user_id: null // explicitly set user_id to null for anonymous users
         })
 
@@ -45,6 +48,12 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
     }
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch(e)
+    }
+  }
+
   return (
     <div className="w-full max-w-md space-y-2">
       <form onSubmit={handleSearch} className="flex gap-2">
@@ -53,19 +62,19 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
           placeholder="Filter quotes by topic, theme, or style..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyPress={handleKeyPress}
           className="bg-white/90"
         />
-        {currentFilter && (
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="icon"
-            onClick={handleSaveFilter}
-            className="hover:text-primary transition-colors"
-          >
-            <Save className="h-5 w-5" />
-          </Button>
-        )}
+        <Button 
+          type="button" 
+          variant="ghost" 
+          size="icon"
+          onClick={handleSaveFilter}
+          disabled={!searchTerm.trim()}
+          className="hover:text-primary transition-colors"
+        >
+          <Save className="h-5 w-5" />
+        </Button>
       </form>
       {currentFilter && (
         <div className="flex items-center gap-2 text-sm text-primary-dark/80">
