@@ -46,7 +46,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    const searchContext = determineSearchContext(searchTerm);
+    const searchContext = searchTerm ? determineSearchContext(searchTerm) : 'general';
     console.log('Determined search context:', searchContext);
 
     let systemPrompt = `You are a quote generator that creates unique, diverse, and meaningful quotes. 
@@ -66,7 +66,7 @@ serve(async (req) => {
       3. Make it universally relevant while being specific
       4. Attribute it to a fictional but credible author name (use diverse names, never repeat patterns)`;
     } else {
-      systemPrompt += `\nThe search term '${searchTerm}' is a keyword to inspire the quote.
+      systemPrompt += `\nThe search term '${searchTerm || "general wisdom"}' is a keyword to inspire the quote.
       1. Create an original quote that incorporates or relates to this keyword
       2. The connection can be literal or metaphorical
       3. Focus on making it meaningful and memorable
@@ -77,7 +77,10 @@ serve(async (req) => {
 
     const messages = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: `Generate a unique and inspiring quote about ${searchTerm}. Remember to be original and avoid common phrases.` }
+      { role: "user", content: searchTerm 
+        ? `Generate a unique and inspiring quote about ${searchTerm}. Remember to be original and avoid common phrases.`
+        : `Generate a unique and inspiring quote. Remember to be original and avoid common phrases.`
+      }
     ];
 
     console.log('Sending request to OpenAI with messages:', messages);
@@ -89,7 +92,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: messages,
         temperature: 1.2,
         max_tokens: 150,
