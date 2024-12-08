@@ -37,9 +37,9 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // If no search term is provided, return a classic quote
-    if (!searchTerm) {
-      console.log('No search term provided, returning classic quote');
+    // If no search term is provided or if we're in classic quote mode, return a classic quote
+    if (!searchTerm || type === 'human') {
+      console.log('No search term provided or classic quote requested, returning classic quote');
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return new Response(
         JSON.stringify(classicQuotes[randomIndex]),
@@ -83,17 +83,24 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: messages,
-        temperature: 1.2, // Increased for more creativity and variety
+        temperature: 1.2,
         max_tokens: 150,
-        presence_penalty: 0.8, // Added to encourage unique content
-        frequency_penalty: 0.8, // Added to discourage repetition
+        presence_penalty: 0.8,
+        frequency_penalty: 0.8,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error response:', errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      
+      // If we hit quota limits or any other OpenAI error, fall back to classic quotes
+      console.log('Falling back to classic quotes due to OpenAI API error');
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+      return new Response(
+        JSON.stringify(classicQuotes[randomIndex]),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
@@ -129,22 +136,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-quote function:', error);
     
-    // Only fall back to classic quotes for API key configuration errors
-    if (error.message.includes('OpenAI API key not configured')) {
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return new Response(
-        JSON.stringify(classicQuotes[randomIndex]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    // For other errors, return the error to the client
+    // For any error, fall back to classic quotes
+    const randomIndex = Math.floor(Math.random() * classicQuotes.length);
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify(classicQuotes[randomIndex]),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 })
