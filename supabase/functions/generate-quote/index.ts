@@ -17,8 +17,29 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
+function determineSearchContext(searchTerm: string) {
+  // List of known authors or historical figures
+  const knownAuthors = [
+    "einstein", "gandhi", "shakespeare", "plato", "aristotle", "socrates",
+    "newton", "tesla", "darwin", "hawking", "curie", "da vinci"
+  ];
+  
+  const searchTermLower = searchTerm.toLowerCase();
+  
+  if (knownAuthors.includes(searchTermLower)) {
+    return "author";
+  }
+  
+  // Check if it looks like a concept/topic
+  const conceptPatterns = /^(love|life|success|happiness|wisdom|courage|peace|time|nature|science|art|music|philosophy|faith|hope|dreams|growth|change|leadership)$/i;
+  if (conceptPatterns.test(searchTerm)) {
+    return "concept";
+  }
+  
+  return "keyword";
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -38,7 +59,6 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    // If no search term is provided or if we're in classic quote mode, return a classic quote
     if (!searchTerm || type === 'human') {
       console.log('No search term provided or classic quote requested, returning classic quote');
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
@@ -48,29 +68,36 @@ serve(async (req) => {
       );
     }
 
-    const messages = [
-      {
-        role: "system",
-        content: `You are a quote generator that creates unique, diverse, and meaningful quotes. 
-        Important instructions:
-        1. NEVER repeat quotes that have been commonly used or are well-known.
-        2. If the search term '${searchTerm}' appears to be an author's name:
-           - Generate a quote in their style but DO NOT use their actual quotes
-           - Maintain their tone and philosophy while creating something new
-        3. If '${searchTerm}' is a theme or topic:
-           - Create a completely original quote that deeply explores this theme
-           - Ensure the quote is profound, unique, and not cliché
-           - Assign it to a fictional but credible author with a realistic name
-        4. Each generated quote must be different from previous ones
-        5. Avoid common phrases and overused metaphors
-        6. Make the quote concise but impactful
+    const searchContext = determineSearchContext(searchTerm);
+    console.log('Determined search context:', searchContext);
 
-        Respond in exactly this format: quote - author`
-      },
-      {
-        role: "user",
-        content: `Generate a unique and inspiring quote about ${searchTerm}. Remember to be original and avoid common phrases.`
-      }
+    let systemPrompt = `You are a quote generator that creates unique, diverse, and meaningful quotes. `;
+    
+    if (searchContext === "author") {
+      systemPrompt += `The search term '${searchTerm}' is a known author/figure.
+      1. Generate a quote that reflects their philosophical style and thinking
+      2. The quote should feel like something they might have said, but must be original
+      3. Use their typical themes and areas of expertise
+      4. For attribution, create a fictional but similar-sounding name (e.g. for Einstein, use names like 'Clara Westfield' or 'Edwin Thorne')`;
+    } else if (searchContext === "concept") {
+      systemPrompt += `The search term '${searchTerm}' is a concept/theme.
+      1. Create a profound and original quote exploring this theme
+      2. Avoid common phrases and clichés
+      3. Make it universally relevant while being specific
+      4. Attribute it to a fictional but credible author name`;
+    } else {
+      systemPrompt += `The search term '${searchTerm}' is a keyword to inspire the quote.
+      1. Create an original quote that incorporates or relates to this keyword
+      2. The connection can be literal or metaphorical
+      3. Focus on making it meaningful and memorable
+      4. Attribute it to a fictional but credible author name`;
+    }
+
+    systemPrompt += `\n\nRespond in exactly this format: quote - author`;
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Generate a unique and inspiring quote about ${searchTerm}. Remember to be original and avoid common phrases.` }
     ];
 
     console.log('Sending request to OpenAI with messages:', messages);
@@ -130,7 +157,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-quote function:', error);
     
-    // For any error, fall back to classic quotes
     const randomIndex = Math.floor(Math.random() * classicQuotes.length);
     return new Response(
       JSON.stringify(classicQuotes[randomIndex]),
