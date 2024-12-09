@@ -11,6 +11,7 @@ export default function Index() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("")
 
@@ -41,6 +42,7 @@ export default function Index() {
           onShowSettings={() => setShowSettings(true)}
           onShowFavorites={() => setShowFavorites(true)}
           onShowAuth={() => setShowAuthDialog(true)}
+          onShowFilters={() => setShowFilters(true)}
         />
 
         <div className="flex-grow flex flex-col items-center justify-center gap-6">
@@ -68,13 +70,13 @@ export default function Index() {
           showFavorites={showFavorites}
           showFeedback={showFeedback}
           showAuthDialog={showAuthDialog}
-          showFilters={false}
+          showFilters={showFilters}
           savedFilters={[]}
           onCloseSettings={() => setShowSettings(false)}
           onCloseFavorites={() => setShowFavorites(false)}
           onCloseFeedback={() => setShowFeedback(false)}
           onCloseAuth={() => setShowAuthDialog(false)}
-          onCloseFilters={() => {}}
+          onCloseFilters={() => setShowFilters(false)}
           onSelectFilter={() => {}}
           onDeleteFilter={() => {}}
         />
