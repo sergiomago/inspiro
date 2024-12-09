@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Settings as SettingsIcon, Heart, MessageSquare, Filter } from "lucide-react"
+import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
 import { Logo } from "@/components/Logo"
 
 interface HeaderProps {
@@ -25,14 +25,6 @@ export const Header = ({
       <div className="flex gap-2">
         {user && (
           <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onShowFilters}
-              className="hover:text-primary transition-colors text-primary-dark"
-            >
-              <Filter className="h-5 w-5" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
