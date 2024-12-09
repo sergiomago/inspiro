@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Save, X } from "lucide-react"
-import { supabase } from "@/lib/supabase"
-import { toast } from "sonner"
+import { X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface SearchBarProps {
@@ -16,40 +14,10 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<string>("topic")
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchTerm.trim()) {
       onSearch(searchTerm.trim(), filterType)
-      await handleSaveFilter()
-      setSearchTerm("") // Clear the search term after saving
-    }
-  }
-
-  const handleSaveFilter = async () => {
-    if (!searchTerm.trim()) return;
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('user_filters')
-        .insert({ 
-          filter_text: `${filterType}:${searchTerm.trim()}`,
-          user_id: user?.id || null // explicitly set user_id to null for anonymous users
-        });
-
-      if (error) {
-        if (error.message.includes('more than 3 filters')) {
-          toast.error("You can only save up to 3 filters. Please delete one to save a new filter.")
-        } else {
-          throw error;
-        }
-      } else {
-        toast.success("Filter saved successfully!")
-      }
-    } catch (error: any) {
-      console.error('Error saving filter:', error)
-      toast.error("Failed to save filter")
     }
   }
 
@@ -81,14 +49,13 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
           className="bg-white/90"
         />
         <Button 
-          type="button" 
-          variant="ghost" 
+          type="submit"
+          variant="ghost"
           size="icon"
-          onClick={handleSaveFilter}
           disabled={!searchTerm.trim()}
           className="hover:text-primary transition-colors"
         >
-          <Save className="h-5 w-5" />
+          <X className="h-5 w-5" />
         </Button>
       </form>
       {currentFilter && (

@@ -1,15 +1,9 @@
 import { useAuth } from "@/hooks/useAuth"
 import { QuoteCard } from "@/components/QuoteCard"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { SearchBar } from "@/components/SearchBar"
-import { supabase } from "@/lib/supabase"
 import { Header } from "@/components/Header"
 import { DialogManager } from "@/components/DialogManager"
-
-interface SavedFilter {
-  id: number;
-  filter_text: string;
-}
 
 export default function Index() {
   const { user, loading } = useAuth()
@@ -17,49 +11,17 @@ export default function Index() {
   const [showFavorites, setShowFavorites] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
-  const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([])
+  const [filterType, setFilterType] = useState("")
 
-  useEffect(() => {
-    if (user) {
-      loadSavedFilters()
-    }
-  }, [user])
-
-  const loadSavedFilters = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_filters')
-        .select('id, filter_text')
-      
-      if (error) throw error
-      setSavedFilters(data || [])
-    } catch (error) {
-      console.error('Error loading filters:', error)
-    }
-  }
-
-  const handleSearch = (term: string) => {
+  const handleSearch = (term: string, type: string) => {
     setSearchTerm(term)
+    setFilterType(type)
   }
 
   const handleResetFilter = () => {
     setSearchTerm("")
-  }
-
-  const handleDeleteFilter = async (id: number) => {
-    try {
-      const { error } = await supabase
-        .from('user_filters')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-      await loadSavedFilters()
-    } catch (error) {
-      console.error('Error deleting filter:', error)
-    }
+    setFilterType("")
   }
 
   if (loading) {
@@ -75,7 +37,6 @@ export default function Index() {
       <div className="container mx-auto px-4 min-h-screen flex flex-col">
         <Header 
           user={user}
-          onShowFilters={() => setShowFilters(true)}
           onShowFeedback={() => setShowFeedback(true)}
           onShowSettings={() => setShowSettings(true)}
           onShowFavorites={() => setShowFavorites(true)}
@@ -85,12 +46,13 @@ export default function Index() {
         <div className="flex-grow flex flex-col items-center justify-center gap-6">
           <SearchBar 
             onSearch={handleSearch} 
-            currentFilter={searchTerm}
+            currentFilter={searchTerm ? `${filterType}: ${searchTerm}` : ""}
             onReset={handleResetFilter}
           />
           <QuoteCard 
             onNeedAuth={() => setShowAuthDialog(true)} 
             searchTerm={searchTerm}
+            filterType={filterType}
           />
         </div>
 
@@ -106,15 +68,15 @@ export default function Index() {
           showFavorites={showFavorites}
           showFeedback={showFeedback}
           showAuthDialog={showAuthDialog}
-          showFilters={showFilters}
-          savedFilters={savedFilters}
+          showFilters={false}
+          savedFilters={[]}
           onCloseSettings={() => setShowSettings(false)}
           onCloseFavorites={() => setShowFavorites(false)}
           onCloseFeedback={() => setShowFeedback(false)}
           onCloseAuth={() => setShowAuthDialog(false)}
-          onCloseFilters={() => setShowFilters(false)}
-          onSelectFilter={setSearchTerm}
-          onDeleteFilter={handleDeleteFilter}
+          onCloseFilters={() => {}}
+          onSelectFilter={() => {}}
+          onDeleteFilter={() => {}}
         />
       </div>
     </div>

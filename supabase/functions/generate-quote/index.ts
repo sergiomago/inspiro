@@ -18,11 +18,11 @@ Example correct formats:
   switch (filterType) {
     case "author":
       return `${baseSystemPrompt}
-      Generate a quote that could have been said by ${searchTerm}.
-      - The quote should reflect their known philosophy, style, and areas of expertise
+      Generate a quote that was actually said or written by ${searchTerm}.
+      - The quote MUST be from a real person named ${searchTerm}
       - The author name in the response MUST be "${searchTerm}"
-      - Make it feel authentic to their way of thinking
-      - If it's a well-known person, base it on their actual views and works`;
+      - If you can't find a real quote from this author, respond with an error message
+      - Base it on their actual views, works, and philosophy`;
 
     case "topic":
       return `${baseSystemPrompt}

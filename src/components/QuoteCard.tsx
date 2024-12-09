@@ -8,13 +8,15 @@ interface QuoteCardProps {
   author?: string;
   onNeedAuth?: () => void;
   searchTerm?: string;
+  filterType?: string;
 }
 
 export const QuoteCard = ({ 
   quote: initialQuote = "Welcome to Inspiro! Click refresh to generate your first inspirational quote.", 
   author: initialAuthor = "Inspiro",
   onNeedAuth,
-  searchTerm
+  searchTerm,
+  filterType
 }: QuoteCardProps) => {
   const {
     quote,
@@ -22,7 +24,7 @@ export const QuoteCard = ({
     isLoading,
     handleRefresh,
     handleFavorite
-  } = useQuoteLogic(initialQuote, initialAuthor, onNeedAuth, searchTerm);
+  } = useQuoteLogic(initialQuote, initialAuthor, onNeedAuth, searchTerm, filterType);
 
   return (
     <Card className="w-full max-w-md p-8 animate-fade-in border-none shadow-lg bg-[#2D1B4D]/85">
