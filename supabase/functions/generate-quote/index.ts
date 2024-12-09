@@ -8,76 +8,70 @@ const corsHeaders = {
 
 function buildPrompt(filterType: string, searchTerm: string) {
   const baseSystemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
-Your response MUST ALWAYS follow this EXACT format:
-"[The quote text here]" - [Author name here]
+You MUST ALWAYS follow this EXACT format, including the quotes and dash:
+"[quote text]" - [author name]
 
-Example correct formats:
+Examples of CORRECT format:
 "The journey of a thousand miles begins with a single step." - Lao Tzu
-"Innovation distinguishes between a leader and a follower." - Steve Jobs`;
+"Innovation distinguishes between a leader and a follower." - Steve Jobs
+
+DO NOT include any additional text, explanation, or formatting.
+DO NOT use markdown or other formatting.
+ONLY return the quote in the exact format shown above.`;
 
   switch (filterType) {
     case "author":
       return `${baseSystemPrompt}
-      Generate a quote that was actually said or written by ${searchTerm}.
-      - The quote MUST be from a real person named ${searchTerm}
-      - The author name in the response MUST be "${searchTerm}"
-      - If you can't find a real quote from this author, respond with an error message
-      - Base it on their actual views, works, and philosophy`;
+Generate a quote that was actually said or written by ${searchTerm}.
+The quote MUST be from this exact author.
+If you can't find a real quote from this author, use this format:
+"I could not find a verified quote from this author." - AI Assistant`;
 
     case "topic":
       return `${baseSystemPrompt}
-      Generate a quote about the topic: ${searchTerm}
-      - The quote should explore this theme deeply
-      - It doesn't need to contain the exact word, but should clearly relate to the topic
-      - Create a unique, non-existing author name (never use names like Elara, Zara, or any repetitive patterns)
-      - Make the author name diverse and culturally varied`;
+Generate an inspirational quote about: ${searchTerm}
+The quote should be meaningful and relate to this topic.
+Create a unique, culturally diverse author name.`;
 
     case "keyword":
       return `${baseSystemPrompt}
-      Generate a quote that includes the keyword: ${searchTerm}
-      - The quote MUST contain this exact word or a close variation
-      - Create a unique, non-existing author name (never use names like Elara, Zara, or any repetitive patterns)
-      - Make the author name diverse and culturally varied`;
+Generate a quote that includes the word: ${searchTerm}
+The quote MUST contain this exact word or a close variation.
+Create a unique, culturally diverse author name.`;
 
     default:
-      return baseSystemPrompt;
+      return `${baseSystemPrompt}
+Generate an inspirational quote.
+Make it meaningful and impactful.
+Create a unique, culturally diverse author name.`;
   }
 }
 
 function parseQuote(text: string): { quote: string; author: string } {
   console.log('Parsing quote text:', text);
   
-  // Try to match the format "[quote]" - [author]
+  // Match the exact format "[quote]" - [author]
   const quoteMatch = text.match(/"([^"]+)"\s*-\s*(.+)/);
-  if (quoteMatch) {
-    return {
-      quote: quoteMatch[1],
-      author: quoteMatch[2].trim()
-    };
+  if (!quoteMatch) {
+    throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
   }
 
-  // If no quotes found, try to match anything before and after a hyphen
-  const fallbackMatch = text.split(/\s*-\s*/);
-  if (fallbackMatch.length === 2) {
-    return {
-      quote: fallbackMatch[0].replace(/['"]/g, '').trim(),
-      author: fallbackMatch[1].trim()
-    };
-  }
-
-  throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
+  return {
+    quote: quoteMatch[1].trim(),
+    author: quoteMatch[2].trim()
+  };
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const requestBody = await req.text();
     console.log('Raw request body:', requestBody);
     
-    const { type = 'mixed', searchTerm, filterType = 'topic' } = JSON.parse(requestBody);
+    const { type = 'mixed', searchTerm = '', filterType = '' } = JSON.parse(requestBody);
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     console.log('Processing request:', { type, searchTerm, filterType });
@@ -100,9 +94,9 @@ serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Generate a quote based on the given context.' }
+          { role: 'user', content: 'Generate a quote following the exact format specified.' }
         ],
-        temperature: 0.9,
+        temperature: 0.7,
       }),
     });
 
