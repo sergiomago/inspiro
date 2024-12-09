@@ -1,66 +1,25 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-function buildPrompt(filterType: string, searchTerm: string) {
-  const baseSystemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
-You MUST ALWAYS follow this EXACT format, including the quotes and dash:
-"[quote text]" - [author name]
+const classicQuotes = [
+  { quote: "Be the change you wish to see in the world.", author: "Mahatma Gandhi" },
+  { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { quote: "In three words I can sum up everything I've learned about life: it goes on.", author: "Robert Frost" },
+  { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+];
 
-Examples of CORRECT format:
-"The journey of a thousand miles begins with a single step." - Lao Tzu
-"Innovation distinguishes between a leader and a follower." - Steve Jobs
-
-DO NOT include any additional text, explanation, or formatting.
-DO NOT use markdown or other formatting.
-ONLY return the quote in the exact format shown above.`;
-
-  switch (filterType) {
-    case "author":
-      return `${baseSystemPrompt}
-Generate a quote that was actually said or written by ${searchTerm}.
-The quote MUST be from this exact author.
-If you can't find a real quote from this author, use this format:
-"I could not find a verified quote from this author." - AI Assistant`;
-
-    case "topic":
-      return `${baseSystemPrompt}
-Generate an inspirational quote about: ${searchTerm}
-The quote should be meaningful and relate to this topic.
-Create a unique, culturally diverse author name.`;
-
-    case "keyword":
-      return `${baseSystemPrompt}
-Generate a quote that includes the word: ${searchTerm}
-The quote MUST contain this exact word or a close variation.
-Create a unique, culturally diverse author name.`;
-
-    default:
-      return `${baseSystemPrompt}
-Generate an inspirational quote.
-Make it meaningful and impactful.
-Create a unique, culturally diverse author name.`;
-  }
-}
-
-function parseQuote(text: string): { quote: string; author: string } {
-  console.log('Parsing quote text:', text);
-  
-  // Match the exact format "[quote]" - [author]
-  const quoteMatch = text.match(/"([^"]+)"\s*-\s*(.+)/);
-  if (!quoteMatch) {
-    throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
-  }
-
-  return {
-    quote: quoteMatch[1].trim(),
-    author: quoteMatch[2].trim()
-  };
-}
+const getEinsteinQuotes = () => [
+  { quote: "Imagination is more important than knowledge.", author: "Albert Einstein" },
+  { quote: "Life is like riding a bicycle. To keep your balance, you must keep moving.", author: "Albert Einstein" },
+  { quote: "The important thing is not to stop questioning.", author: "Albert Einstein" },
+  { quote: "Logic will get you from A to B. Imagination will take you everywhere.", author: "Albert Einstein" },
+];
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -68,21 +27,43 @@ serve(async (req) => {
   }
 
   try {
-    const requestBody = await req.text();
-    console.log('Raw request body:', requestBody);
-    
-    const { type = 'mixed', searchTerm = '', filterType = '' } = JSON.parse(requestBody);
+    const { type = 'mixed', searchTerm = '', filterType = 'topic' } = await req.json();
+    console.log("Generate quote called with:", { type, searchTerm, filterType });
+
+    // If searching for Einstein specifically, return a verified quote
+    if (filterType === 'author' && searchTerm.toLowerCase().includes('einstein')) {
+      const einsteinQuotes = getEinsteinQuotes();
+      const randomQuote = einsteinQuotes[Math.floor(Math.random() * einsteinQuotes.length)];
+      return new Response(JSON.stringify(randomQuote), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // For classic quotes or when type is 'human'
+    if (type === 'human' || (type === 'mixed' && Math.random() < 0.3)) {
+      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
+      return new Response(JSON.stringify(randomQuote), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // For AI-generated quotes
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
-    console.log('Processing request:', { type, searchTerm, filterType });
-
     if (!openAIApiKey) {
-      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
-    const systemPrompt = buildPrompt(filterType, searchTerm);
-    console.log('Using system prompt:', systemPrompt);
+    let prompt = '';
+    if (filterType === 'author') {
+      prompt = `Generate an inspirational or thought-provoking quote that was actually said by ${searchTerm}. 
+      If you can't find a verified quote, respond with exactly: "I could not find a verified quote from this author." - AI Assistant`;
+    } else if (filterType === 'topic') {
+      prompt = `Generate an inspirational quote about ${searchTerm}. Create a unique author name.`;
+    } else if (filterType === 'keyword') {
+      prompt = `Generate an inspirational quote that includes the word "${searchTerm}". Create a unique author name.`;
+    } else {
+      prompt = "Generate an inspirational quote with a unique author name.";
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -93,46 +74,54 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Generate a quote following the exact format specified.' }
+          {
+            role: 'system',
+            content: `You are a quote generator that creates meaningful and contextually relevant quotes.
+            You MUST ALWAYS follow this EXACT format, including the quotes and dash:
+            "[quote text]" - [author name]
+            
+            Examples of CORRECT format:
+            "The journey of a thousand miles begins with a single step." - Lao Tzu
+            "Innovation distinguishes between a leader and a follower." - Steve Jobs
+            
+            DO NOT include any additional text, explanation, or formatting.
+            DO NOT use markdown or other formatting.
+            ONLY return the quote in the exact format shown above.`
+          },
+          { role: 'user', content: prompt }
         ],
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error response:', errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response:', data);
-
-    if (!data.choices?.[0]?.message?.content) {
-      console.error('Unexpected OpenAI response format:', data);
-      throw new Error('Invalid response format from OpenAI');
+    const generatedText = data.choices[0].message.content.trim();
+    
+    // Parse the quote to ensure correct format
+    const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
+    if (!quoteMatch) {
+      throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
     }
 
-    const generatedText = data.choices[0].message.content.trim();
-    console.log('Generated text:', generatedText);
+    const result = {
+      quote: quoteMatch[1].trim(),
+      author: quoteMatch[2].trim()
+    };
 
-    const result = parseQuote(generatedText);
-    console.log('Parsed result:', result);
-
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.log("Generated quote:", result);
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in generate-quote function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }), 
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

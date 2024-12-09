@@ -31,10 +31,10 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
     <div className="w-full max-w-md space-y-2">
       <form onSubmit={handleSearch} className="flex gap-2">
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[140px] bg-white/90">
+          <SelectTrigger className="w-[140px] bg-white">
             <SelectValue placeholder="Filter by..." />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white">
             <SelectItem value="author">Author</SelectItem>
             <SelectItem value="topic">Topic</SelectItem>
             <SelectItem value="keyword">Keyword</SelectItem>
@@ -46,7 +46,7 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyPress={handleKeyPress}
-          className="bg-white/90"
+          className="bg-white"
         />
         <Button 
           type="submit"
