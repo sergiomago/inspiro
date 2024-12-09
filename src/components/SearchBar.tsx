@@ -21,6 +21,7 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
     if (searchTerm.trim()) {
       onSearch(searchTerm.trim(), filterType)
       await handleSaveFilter()
+      setSearchTerm("") // Clear the search term after saving
     }
   }
 
