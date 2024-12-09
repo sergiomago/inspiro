@@ -7,8 +7,13 @@ const corsHeaders = {
 }
 
 function buildPrompt(filterType: string, searchTerm: string) {
-  const baseSystemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes. 
-  Your responses must ALWAYS be in the format: quote - author`;
+  const baseSystemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
+Your response MUST ALWAYS follow this EXACT format:
+"[The quote text here]" - [Author name here]
+
+Example correct formats:
+"The journey of a thousand miles begins with a single step." - Lao Tzu
+"Innovation distinguishes between a leader and a follower." - Steve Jobs`;
 
   switch (filterType) {
     case "author":
@@ -37,6 +42,30 @@ function buildPrompt(filterType: string, searchTerm: string) {
     default:
       return baseSystemPrompt;
   }
+}
+
+function parseQuote(text: string): { quote: string; author: string } {
+  console.log('Parsing quote text:', text);
+  
+  // Try to match the format "[quote]" - [author]
+  const quoteMatch = text.match(/"([^"]+)"\s*-\s*(.+)/);
+  if (quoteMatch) {
+    return {
+      quote: quoteMatch[1],
+      author: quoteMatch[2].trim()
+    };
+  }
+
+  // If no quotes found, try to match anything before and after a hyphen
+  const fallbackMatch = text.split(/\s*-\s*/);
+  if (fallbackMatch.length === 2) {
+    return {
+      quote: fallbackMatch[0].replace(/['"]/g, '').trim(),
+      author: fallbackMatch[1].trim()
+    };
+  }
+
+  throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
 }
 
 serve(async (req) => {
@@ -68,7 +97,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: 'Generate a quote based on the given context.' }
@@ -94,19 +123,8 @@ serve(async (req) => {
     const generatedText = data.choices[0].message.content.trim();
     console.log('Generated text:', generatedText);
 
-    const parts = generatedText.split(' - ');
-    
-    if (parts.length < 2) {
-      console.error('Invalid quote format:', generatedText);
-      throw new Error('Invalid quote format received');
-    }
-
-    const result = {
-      quote: parts[0].replace(/["']/g, ''),
-      author: parts[1]
-    };
-
-    console.log('Returning result:', result);
+    const result = parseQuote(generatedText);
+    console.log('Parsed result:', result);
 
     return new Response(
       JSON.stringify(result),
