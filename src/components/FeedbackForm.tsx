@@ -10,14 +10,12 @@ import {
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 
 interface FeedbackFormProps {
   onClose?: () => void;
 }
 
 export const FeedbackForm = ({ onClose }: FeedbackFormProps) => {
-  const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [features, setFeatures] = useState("");
   const [bugs, setBugs] = useState("");
@@ -26,16 +24,10 @@ export const FeedbackForm = ({ onClose }: FeedbackFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast.error("You must be logged in to submit feedback");
-      return;
-    }
-    
     setSubmitting(true);
 
     try {
       const { error } = await supabase.from("feedback").insert({
-        user_id: user.id,
         rating,
         feature_requests: features,
         bugs,

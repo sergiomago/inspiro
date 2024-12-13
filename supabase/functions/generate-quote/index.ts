@@ -35,15 +35,6 @@ serve(async (req) => {
       });
     }
 
-    // For mixed type without search term, randomly choose between AI and classic
-    if (type === 'mixed' && !searchTerm && Math.random() < 0.5) {
-      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
-      console.log("Returning mixed (classic) quote:", randomQuote);
-      return new Response(JSON.stringify(randomQuote), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // For AI-generated quotes or when searching
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -52,7 +43,7 @@ serve(async (req) => {
 
     let systemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
     When generating quotes, follow these rules:
-    1. For AI quotes (type='ai'): Create completely original quotes with fictional modern authors
+    1. For AI quotes (type='ai'): Create completely original quotes with fictional modern authors. Never use real historical figures.
     2. For author quotes (filterType='author'): Create quotes that match the author's style and philosophy
     3. Always follow this EXACT format: "[quote text]" - [author name]
     
@@ -66,7 +57,7 @@ serve(async (req) => {
       Make sure to attribute the quote to ${searchTerm}.`;
     } else if (type === 'ai') {
       userPrompt = `Create an original inspirational quote with a fictional modern author name.
-      Do not use real historical figures as authors.`;
+      The author MUST be fictional, do not use any real historical figures.`;
     } else if (filterType === 'topic') {
       userPrompt = `Generate an inspirational quote about ${searchTerm}. Create a unique author name.`;
     } else if (filterType === 'keyword') {

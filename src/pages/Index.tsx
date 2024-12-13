@@ -4,8 +4,6 @@ import { useState } from "react"
 import { SearchBar } from "@/components/SearchBar"
 import { Header } from "@/components/Header"
 import { DialogManager } from "@/components/DialogManager"
-import { Settings } from "@/components/Settings"
-import { Card } from "@/components/ui/card"
 
 export default function Index() {
   const { user, loading } = useAuth()
@@ -58,9 +56,6 @@ export default function Index() {
             searchTerm={searchTerm}
             filterType={filterType}
           />
-          <Card className="w-full max-w-md mt-8 bg-white/50 backdrop-blur-sm">
-            <Settings onClose={() => {}} />
-          </Card>
         </div>
 
         <footer className="py-4 text-center text-primary-dark/80">

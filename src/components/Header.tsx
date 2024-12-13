@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
+import { Settings as SettingsIcon, Heart, MessageSquare, RefreshCw } from "lucide-react"
 import { Logo } from "@/components/Logo"
 
 interface HeaderProps {
@@ -23,24 +23,24 @@ export const Header = ({
     <div className="flex justify-between items-center py-8">
       <Logo />
       <div className="flex gap-2">
-        {user && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onShowFeedback}
+          className="hover:text-primary transition-colors text-primary-dark"
+        >
+          <MessageSquare className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onShowSettings}
+          className="hover:text-primary transition-colors text-primary-dark"
+        >
+          <SettingsIcon className="h-5 w-5" />
+        </Button>
+        {user ? (
           <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onShowFeedback}
-              className="hover:text-primary transition-colors text-primary-dark"
-            >
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onShowSettings}
-              className="hover:text-primary transition-colors text-primary-dark"
-            >
-              <SettingsIcon className="h-5 w-5" />
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -49,9 +49,15 @@ export const Header = ({
             >
               <Heart className="h-5 w-5" />
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {}}
+              className="hover:text-primary transition-colors text-primary-dark"
+            >
+              Sign Out
+            </Button>
           </>
-        )}
-        {!user && (
+        ) : (
           <Button
             variant="outline"
             onClick={onShowAuth}
