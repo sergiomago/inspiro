@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Settings as SettingsIcon, Heart, MessageSquare, RefreshCw } from "lucide-react"
+import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
 import { Logo } from "@/components/Logo"
 
 interface HeaderProps {
