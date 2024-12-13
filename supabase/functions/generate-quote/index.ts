@@ -14,13 +14,6 @@ const classicQuotes = [
   { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
 ];
 
-const getEinsteinQuotes = () => [
-  { quote: "Imagination is more important than knowledge.", author: "Albert Einstein" },
-  { quote: "Life is like riding a bicycle. To keep your balance, you must keep moving.", author: "Albert Einstein" },
-  { quote: "The important thing is not to stop questioning.", author: "Albert Einstein" },
-  { quote: "Logic will get you from A to B. Imagination will take you everywhere.", author: "Albert Einstein" },
-];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,27 +32,6 @@ serve(async (req) => {
       });
     }
 
-    // If searching for Einstein specifically, return a verified quote
-    if (filterType === 'author' && searchTerm.toLowerCase().includes('einstein')) {
-      const einsteinQuotes = getEinsteinQuotes();
-      const randomQuote = einsteinQuotes[Math.floor(Math.random() * einsteinQuotes.length)];
-      console.log("Returning Einstein quote:", randomQuote);
-      return new Response(JSON.stringify(randomQuote), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // For mixed type without search term, randomly choose between AI and classic
-    if (type === 'mixed' && !searchTerm) {
-      if (Math.random() < 0.3) { // 30% chance for classic quotes
-        const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
-        console.log("Returning mixed classic quote:", randomQuote);
-        return new Response(JSON.stringify(randomQuote), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
-
     // For AI-generated quotes or when searching
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
@@ -67,21 +39,22 @@ serve(async (req) => {
     }
 
     let systemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
-    You MUST ALWAYS follow this EXACT format, including the quotes and dash:
+    When generating quotes for specific authors, ensure they match their style and philosophy.
+    You MUST ALWAYS follow this EXACT format:
     "[quote text]" - [author name]
     
-    Examples of CORRECT format:
+    Examples:
     "The journey of a thousand miles begins with a single step." - Lao Tzu
     "Innovation distinguishes between a leader and a follower." - Steve Jobs
     
-    DO NOT include any additional text, explanation, or formatting.
-    DO NOT use markdown or other formatting.
+    DO NOT include any additional text or formatting.
     ONLY return the quote in the exact format shown above.`;
 
     let userPrompt = '';
     if (filterType === 'author') {
-      userPrompt = `Generate an inspirational or thought-provoking quote that could realistically have been said by ${searchTerm}. 
-      If you're not confident about attributing a quote to this person, respond with: "I cannot generate a verified quote for this author." - AI Assistant`;
+      userPrompt = `Generate an inspirational quote in the style of ${searchTerm}. 
+      The quote should reflect their known philosophy, speaking style, and common themes.
+      Make sure to attribute the quote to ${searchTerm}.`;
     } else if (filterType === 'topic') {
       userPrompt = `Generate an inspirational quote about ${searchTerm}. Create a unique author name.`;
     } else if (filterType === 'keyword') {
@@ -119,7 +92,7 @@ serve(async (req) => {
     const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
     if (!quoteMatch) {
       console.error('Invalid quote format received:', generatedText);
-      throw new Error('Invalid quote format. Expected format: "[quote]" - [author]');
+      throw new Error('Invalid quote format received from OpenAI');
     }
 
     const result = {
