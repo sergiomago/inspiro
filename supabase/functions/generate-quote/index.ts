@@ -12,6 +12,9 @@ const classicQuotes = [
   { quote: "In three words I can sum up everything I've learned about life: it goes on.", author: "Robert Frost" },
   { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
   { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { quote: "Two roads diverged in a wood, and I took the one less traveled by.", author: "Robert Frost" },
+  { quote: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+  { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
 serve(async (req) => {
@@ -23,10 +26,19 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm = '', filterType = 'topic' } = await req.json();
     console.log("Generate quote called with:", { type, searchTerm, filterType });
 
-    // If type is 'human', always return a classic quote
+    // For classic quotes, return from our predefined list
     if (type === 'human') {
       const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
       console.log("Returning classic quote:", randomQuote);
+      return new Response(JSON.stringify(randomQuote), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // For mixed type without search term, randomly choose between AI and classic
+    if (type === 'mixed' && !searchTerm && Math.random() < 0.5) {
+      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
+      console.log("Returning mixed (classic) quote:", randomQuote);
       return new Response(JSON.stringify(randomQuote), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -39,28 +51,28 @@ serve(async (req) => {
     }
 
     let systemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
-    When generating quotes for specific authors, ensure they match their style and philosophy.
-    You MUST ALWAYS follow this EXACT format:
-    "[quote text]" - [author name]
-    
-    Examples:
-    "The journey of a thousand miles begins with a single step." - Lao Tzu
-    "Innovation distinguishes between a leader and a follower." - Steve Jobs
+    When generating quotes, follow these rules:
+    1. For AI quotes (type='ai'): Create completely original quotes with fictional modern authors
+    2. For author quotes (filterType='author'): Create quotes that match the author's style and philosophy
+    3. Always follow this EXACT format: "[quote text]" - [author name]
     
     DO NOT include any additional text or formatting.
     ONLY return the quote in the exact format shown above.`;
 
     let userPrompt = '';
-    if (filterType === 'author') {
+    if (filterType === 'author' && searchTerm) {
       userPrompt = `Generate an inspirational quote in the style of ${searchTerm}. 
-      The quote should reflect their known philosophy, speaking style, and common themes.
+      The quote should reflect their known philosophy and speaking style.
       Make sure to attribute the quote to ${searchTerm}.`;
+    } else if (type === 'ai') {
+      userPrompt = `Create an original inspirational quote with a fictional modern author name.
+      Do not use real historical figures as authors.`;
     } else if (filterType === 'topic') {
       userPrompt = `Generate an inspirational quote about ${searchTerm}. Create a unique author name.`;
     } else if (filterType === 'keyword') {
       userPrompt = `Generate an inspirational quote that includes the word "${searchTerm}". Create a unique author name.`;
     } else {
-      userPrompt = "Generate an inspirational quote with a unique author name.";
+      userPrompt = "Generate an original inspirational quote with a unique author name.";
     }
 
     console.log("Calling OpenAI with prompt:", userPrompt);

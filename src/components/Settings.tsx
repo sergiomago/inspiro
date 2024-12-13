@@ -26,16 +26,19 @@ export const Settings = ({ onClose }: SettingsProps) => {
   const [time2, setTime2] = useState("20:00");
   const [quoteSource, setQuoteSource] = useState("mixed");
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        setUser(currentUser);
+        
+        if (currentUser) {
           const { data: settings } = await supabase
             .from('user_settings')
             .select('*')
-            .eq('user_id', user.id);
+            .eq('user_id', currentUser.id);
           
           if (settings && settings.length > 0) {
             const userSettings = settings[0];
@@ -54,11 +57,13 @@ export const Settings = ({ onClose }: SettingsProps) => {
   }, []);
 
   const handleSaveSettings = async () => {
+    if (!user) {
+      toast.error("Please sign in to save settings");
+      return;
+    }
+    
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
       const { error } = await supabase
         .from('user_settings')
         .upsert({
@@ -105,12 +110,13 @@ export const Settings = ({ onClose }: SettingsProps) => {
         <NotificationSettings 
           enabled={notificationsEnabled}
           onToggle={setNotificationsEnabled}
+          disabled={!user}
         />
 
         <FrequencySettings
           frequency={frequency}
           onChange={setFrequency}
-          disabled={!notificationsEnabled}
+          disabled={!user || !notificationsEnabled}
         />
 
         <TimeSettings
@@ -119,7 +125,7 @@ export const Settings = ({ onClose }: SettingsProps) => {
           onTime1Change={setTime1}
           onTime2Change={setTime2}
           showSecondTime={frequency === "twice-daily"}
-          disabled={!notificationsEnabled}
+          disabled={!user || !notificationsEnabled}
         />
 
         <QuoteSourceSettings
@@ -130,9 +136,9 @@ export const Settings = ({ onClose }: SettingsProps) => {
         <Button 
           onClick={handleSaveSettings}
           className="w-full bg-primary hover:bg-primary-light transition-colors"
-          disabled={loading}
+          disabled={loading || !user}
         >
-          Save Settings
+          {user ? 'Save Settings' : 'Sign in to Save Settings'}
         </Button>
       </CardContent>
     </Card>
