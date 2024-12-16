@@ -37,7 +37,6 @@ export const SearchBar = ({ onSearch, currentFilter, onReset }: SearchBarProps) 
           <SelectContent className="bg-white/90 backdrop-blur-sm border-none">
             <SelectItem value="author">Author</SelectItem>
             <SelectItem value="topic">Topic</SelectItem>
-            <SelectItem value="keyword">Keyword</SelectItem>
           </SelectContent>
         </Select>
         <Input
