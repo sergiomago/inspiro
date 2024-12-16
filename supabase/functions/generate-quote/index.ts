@@ -17,6 +17,8 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
+let lastGeneratedType = 'classic'; // Track the last generated quote type for mixed mode
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -26,25 +28,21 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm = '', filterType = 'topic' } = await req.json();
     console.log("Generate quote called with:", { type, searchTerm, filterType });
 
-    // For classic quotes type, return from our predefined list
-    if (type === 'human') {
+    // For classic quotes type or when mixed mode should return a classic quote
+    if (type === 'human' || (type === 'mixed' && lastGeneratedType === 'ai')) {
       const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
       console.log("Returning classic quote:", randomQuote);
+      
+      if (type === 'mixed') {
+        lastGeneratedType = 'classic';
+      }
+      
       return new Response(JSON.stringify(randomQuote), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // For mixed type without search term, randomly choose between AI and classic
-    if (type === 'mixed' && !searchTerm && Math.random() < 0.3) { // 30% chance for classic quotes
-      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
-      console.log("Returning mixed classic quote:", randomQuote);
-      return new Response(JSON.stringify(randomQuote), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // For AI-generated quotes or when searching
+    // For AI-generated quotes or when mixed mode should return an AI quote
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       throw new Error('OpenAI API key not configured');
@@ -52,27 +50,25 @@ serve(async (req) => {
 
     let systemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
     When generating quotes, follow these rules:
-    1. For AI quotes (type='ai'): Create completely original quotes with fictional modern authors. Never use real historical figures.
-    2. For author quotes (filterType='author'): Create quotes that match the author's style and philosophy
-    3. Always follow this EXACT format: "[quote text]" - [author name]
+    1. Create completely original, inspiring quotes
+    2. NEVER quote real people or historical figures
+    3. Always attribute quotes to "Inspiro AI"
+    4. Keep quotes concise and impactful
+    5. If given a topic or keyword, make sure the quote relates to it
+    6. Always follow this EXACT format: "[quote text]" - Inspiro AI
     
     DO NOT include any additional text or formatting.
     ONLY return the quote in the exact format shown above.`;
 
     let userPrompt = '';
-    if (filterType === 'author' && searchTerm) {
-      userPrompt = `Generate an inspirational quote in the style of ${searchTerm}. 
-      The quote should reflect their known philosophy and speaking style.
-      Make sure to attribute the quote to ${searchTerm}.`;
-    } else if (type === 'ai') {
-      userPrompt = `Create an original inspirational quote with a fictional modern author name.
-      The author MUST be fictional, do not use any real historical figures.`;
-    } else if (filterType === 'topic') {
-      userPrompt = `Generate an inspirational quote about ${searchTerm}. Create a unique author name.`;
+    if (filterType === 'topic' && searchTerm) {
+      userPrompt = `Generate an original inspirational quote about ${searchTerm}.`;
     } else if (filterType === 'keyword') {
-      userPrompt = `Generate an inspirational quote that includes the word "${searchTerm}". Create a unique author name.`;
+      userPrompt = `Generate an original inspirational quote that includes the word "${searchTerm}".`;
+    } else if (filterType === 'author') {
+      userPrompt = `Generate an original inspirational quote in the style of ${searchTerm}, but make it unique and original.`;
     } else {
-      userPrompt = "Generate an original inspirational quote with a unique author name.";
+      userPrompt = "Generate an original inspirational quote.";
     }
 
     console.log("Calling OpenAI with prompt:", userPrompt);
@@ -109,8 +105,12 @@ serve(async (req) => {
 
     const result = {
       quote: quoteMatch[1].trim(),
-      author: quoteMatch[2].trim()
+      author: "Inspiro AI" // Always set author as Inspiro AI for AI-generated quotes
     };
+
+    if (type === 'mixed') {
+      lastGeneratedType = 'ai';
+    }
 
     console.log("Generated quote:", result);
     return new Response(JSON.stringify(result), {
