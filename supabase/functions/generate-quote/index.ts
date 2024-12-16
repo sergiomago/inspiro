@@ -26,10 +26,19 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm = '', filterType = 'topic' } = await req.json();
     console.log("Generate quote called with:", { type, searchTerm, filterType });
 
-    // For classic quotes, return from our predefined list
+    // For classic quotes type, return from our predefined list
     if (type === 'human') {
       const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
       console.log("Returning classic quote:", randomQuote);
+      return new Response(JSON.stringify(randomQuote), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // For mixed type without search term, randomly choose between AI and classic
+    if (type === 'mixed' && !searchTerm && Math.random() < 0.3) { // 30% chance for classic quotes
+      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
+      console.log("Returning mixed classic quote:", randomQuote);
       return new Response(JSON.stringify(randomQuote), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

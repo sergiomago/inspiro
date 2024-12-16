@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { Settings as SettingsIcon, Heart, MessageSquare } from "lucide-react"
 import { Logo } from "@/components/Logo"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 interface HeaderProps {
   user: any;
@@ -19,6 +21,16 @@ export const Header = ({
   onShowFavorites,
   onShowAuth
 }: HeaderProps) => {
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast.success("Signed out successfully")
+    } catch (error) {
+      toast.error("Error signing out")
+      console.error("Error signing out:", error)
+    }
+  }
+
   return (
     <div className="flex justify-between items-center py-8">
       <Logo />
@@ -51,7 +63,7 @@ export const Header = ({
             </Button>
             <Button
               variant="outline"
-              onClick={() => {}}
+              onClick={handleSignOut}
               className="hover:text-primary transition-colors text-primary-dark"
             >
               Sign Out

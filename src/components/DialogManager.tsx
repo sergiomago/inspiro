@@ -41,7 +41,7 @@ export const DialogManager = ({
 }: DialogManagerProps) => {
   return (
     <>
-      {showSettings && user && (
+      {showSettings && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md">
             <Settings onClose={onCloseSettings} />
@@ -57,7 +57,7 @@ export const DialogManager = ({
         </div>
       )}
 
-      {showFeedback && user && (
+      {showFeedback && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md">
             <FeedbackForm onClose={onCloseFeedback} />
