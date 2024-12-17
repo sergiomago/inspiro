@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import OpenAI from "https://esm.sh/openai@4.28.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,41 +12,74 @@ serve(async (req) => {
   }
 
   try {
-    const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY'),
-    })
-
-    if (!Deno.env.get('OPENAI_API_KEY')) {
-      throw new Error('OPENAI_API_KEY is not set')
-    }
-
     const { quote, author } = await req.json()
 
     if (!quote || !author) {
       throw new Error('Quote and author are required')
     }
 
-    console.log('Generating image for quote:', quote, 'by', author)
+    console.log('Generating quote card for:', quote, 'by', author)
 
-    const prompt = `Create a beautiful quote card image with this quote: "${quote}" by ${author}. 
-    The image should have an elegant, minimal design with a subtle gradient background. 
-    The quote should be centered and use an elegant serif font. 
-    Include the author name below the quote in a smaller font. 
-    Add the "inspiro" logo in a subtle way at the bottom. 
-    The image should be in a 1:1 square format optimal for social media sharing.`
+    // Create an HTML template for the quote card
+    const html = `
+      <html>
+        <head>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              width: 1080px;
+              height: 1080px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background: #2D1B4D;
+              font-family: Georgia, serif;
+              color: white;
+            }
+            .container {
+              max-width: 800px;
+              padding: 60px;
+              text-align: center;
+            }
+            .quote {
+              font-size: 48px;
+              line-height: 1.4;
+              margin-bottom: 40px;
+              font-style: italic;
+            }
+            .author {
+              font-size: 32px;
+              opacity: 0.9;
+            }
+            .logo {
+              position: absolute;
+              bottom: 40px;
+              font-size: 24px;
+              opacity: 0.7;
+              font-family: Arial, sans-serif;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="quote">"${quote}"</div>
+            <div class="author">- ${author}</div>
+            <div class="logo">inspiro</div>
+          </div>
+        </body>
+      </html>
+    `
 
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      response_format: "url",
-    })
-
-    console.log('Image generated successfully')
+    // Convert HTML to base64
+    const base64Html = btoa(html)
 
     return new Response(
-      JSON.stringify({ imageUrl: response.data[0].url }),
+      JSON.stringify({ 
+        imageData: `data:text/html;base64,${base64Html}`,
+        quote,
+        author
+      }),
       { 
         headers: { 
           ...corsHeaders, 
