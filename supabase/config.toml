@@ -1,4 +1,4 @@
 project_id = "ksrcwjszmoywsofhlgmz"
 
-[functions.generate-quote]
+[functions.generate-quote-image]
 verify_jwt = false

@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import OpenAI from "https://esm.sh/openai@4.28.0"
 
 const corsHeaders = {
@@ -8,16 +7,27 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { quote, author } = await req.json()
-
     const openai = new OpenAI({
       apiKey: Deno.env.get('OPENAI_API_KEY'),
     })
+
+    if (!Deno.env.get('OPENAI_API_KEY')) {
+      throw new Error('OPENAI_API_KEY is not set')
+    }
+
+    const { quote, author } = await req.json()
+
+    if (!quote || !author) {
+      throw new Error('Quote and author are required')
+    }
+
+    console.log('Generating image for quote:', quote, 'by', author)
 
     const prompt = `Create a beautiful quote card image with this quote: "${quote}" by ${author}. 
     The image should have an elegant, minimal design with a subtle gradient background. 
@@ -34,17 +44,32 @@ serve(async (req) => {
       response_format: "url",
     })
 
-    const imageUrl = response.data[0].url
+    console.log('Image generated successfully')
 
     return new Response(
-      JSON.stringify({ imageUrl }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ imageUrl: response.data[0].url }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-quote-image function:', error)
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Failed to generate quote image'
+      }),
+      { 
+        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     )
   }
 })
