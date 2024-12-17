@@ -14,6 +14,7 @@ interface ShareDialogProps {
 export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [htmlData, setHtmlData] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const { toast } = useToast()
 
   const generateImage = async () => {
@@ -40,12 +41,20 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
     }
   }
 
+  // Generate image URL when HTML data changes
+  useEffect(() => {
+    if (htmlData) {
+      generateImageUrl()
+    }
+  }, [htmlData])
+
   // Reset image when quote changes
   useEffect(() => {
     setHtmlData(null)
+    setImageUrl(null)
   }, [quote, author])
 
-  const handleDownload = async () => {
+  const generateImageUrl = async () => {
     if (!htmlData) return
 
     try {
@@ -72,14 +81,29 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
         scale: 1
       })
 
-      // Create download link
-      const link = document.createElement('a')
-      link.download = `inspiro-quote-${Date.now()}.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
+      // Get image URL
+      const url = canvas.toDataURL('image/png')
+      setImageUrl(url)
 
       // Clean up
       document.body.removeChild(iframe)
+    } catch (error) {
+      toast({
+        title: "Error generating image URL",
+        description: "Please try again",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const handleDownload = async () => {
+    if (!imageUrl) return
+
+    try {
+      const link = document.createElement('a')
+      link.download = `inspiro-quote-${Date.now()}.png`
+      link.href = imageUrl
+      link.click()
 
       toast({
         title: "Image downloaded!",
@@ -95,20 +119,20 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
   }
 
   const shareToSocial = async (platform: string) => {
-    if (!htmlData) return
+    if (!imageUrl) return
 
     const text = `"${quote}" - ${author}\n\nShared via Inspiro`
     let url = ''
 
     switch (platform) {
       case 'facebook':
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(text)}`
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrl)}&quote=${encodeURIComponent(text)}`
         break
       case 'twitter':
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
+        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`
         break
       case 'linkedin':
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}&summary=${encodeURIComponent(text)}`
+        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(imageUrl)}&summary=${encodeURIComponent(text)}`
         break
       case 'instagram':
         toast({
@@ -124,11 +148,13 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
   }
 
   const copyLink = async () => {
+    if (!imageUrl) return
+
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(imageUrl)
       toast({
         title: "Link copied!",
-        description: "The link has been copied to your clipboard",
+        description: "The image link has been copied to your clipboard",
       })
     } catch (error) {
       toast({

@@ -24,6 +24,7 @@ serve(async (req) => {
     const html = `
       <html>
         <head>
+          <link href="https://fonts.googleapis.com/css2?family=Satisfy&display=swap" rel="stylesheet">
           <style>
             body {
               margin: 0;
@@ -55,9 +56,12 @@ serve(async (req) => {
             .logo {
               position: absolute;
               bottom: 40px;
-              font-size: 24px;
-              opacity: 0.7;
-              font-family: Arial, sans-serif;
+              font-family: 'Satisfy', cursive;
+              font-size: 42px;
+              background: linear-gradient(to right, #9b87f5, #6E59A5);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              opacity: 0.9;
             }
           </style>
         </head>
