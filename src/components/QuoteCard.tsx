@@ -34,6 +34,8 @@ export const QuoteCard = ({
           onFavorite={handleFavorite}
           onRefresh={handleRefresh}
           isLoading={isLoading}
+          quote={quote}
+          author={author}
         />
       </div>
     </Card>

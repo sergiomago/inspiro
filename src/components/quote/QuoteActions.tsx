@@ -1,29 +1,41 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Heart } from "lucide-react";
+import { ShareDialog } from "./ShareDialog";
 
 interface QuoteActionsProps {
-  onFavorite: () => void;
   onRefresh: () => void;
-  isLoading: boolean;
+  onFavorite: () => void;
+  isLoading?: boolean;
+  quote?: string;
+  author?: string;
 }
 
-export const QuoteActions = ({ onFavorite, onRefresh, isLoading }: QuoteActionsProps) => {
+export const QuoteActions = ({ 
+  onRefresh, 
+  onFavorite, 
+  isLoading,
+  quote = "",
+  author = ""
+}: QuoteActionsProps) => {
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex justify-center gap-2">
       <Button
         variant="ghost"
         size="icon"
         onClick={onFavorite}
-        className="hover:text-primary-light transition-colors text-white"
+        className="text-white/80 hover:text-white hover:bg-white/10"
       >
         <Heart className="h-5 w-5" />
       </Button>
+      
+      <ShareDialog quote={quote} author={author} />
+
       <Button
         variant="ghost"
         size="icon"
         onClick={onRefresh}
+        className="text-white/80 hover:text-white hover:bg-white/10"
         disabled={isLoading}
-        className="hover:text-primary-light transition-colors text-white"
       >
         <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
       </Button>
