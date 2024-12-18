@@ -6,7 +6,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -20,7 +19,6 @@ serve(async (req) => {
 
     console.log('Generating quote card for:', quote, 'by', author)
 
-    // Create an HTML template for the quote card
     const html = `
       <html>
         <head>
@@ -53,22 +51,19 @@ serve(async (req) => {
             .author {
               font-size: 32px;
               opacity: 0.9;
+              margin-bottom: 60px;
             }
             .logo {
-              position: absolute;
-              bottom: 40px;
-              left: 50%;
-              transform: translateX(-50%);
               font-family: 'Satisfy', cursive;
               font-size: 42px;
               background: linear-gradient(to right, #9b87f5, #6E59A5);
               -webkit-background-clip: text;
+              background-clip: text;
               -webkit-text-fill-color: transparent;
-              opacity: 0.9;
-              padding: 0;
               margin: 0;
+              padding: 0;
               display: inline-block;
-              white-space: nowrap;
+              position: relative;
             }
           </style>
         </head>
@@ -82,7 +77,6 @@ serve(async (req) => {
       </html>
     `
 
-    // Convert HTML to base64
     const base64Html = btoa(html)
 
     return new Response(

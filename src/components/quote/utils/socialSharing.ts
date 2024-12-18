@@ -12,15 +12,13 @@ export const shareToSocial = async (platform: string, { imageUrl, quote, author 
 
   switch (platform) {
     case 'facebook':
-      // Facebook requires the image to be hosted, so we'll share the text with the app URL
-      url = `https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(text)}`;
+      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrl)}&quote=${encodeURIComponent(text)}`;
       break;
     case 'twitter':
-      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`;
       break;
     case 'linkedin':
-      // LinkedIn requires the image to be hosted, so we'll share the text with the app URL
-      url = `https://www.linkedin.com/sharing/share-offsite/?summary=${encodeURIComponent(text)}`;
+      url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(imageUrl)}&summary=${encodeURIComponent(text)}`;
       break;
     case 'instagram':
       toast({
@@ -37,10 +35,14 @@ export const shareToSocial = async (platform: string, { imageUrl, quote, author 
 
 export const downloadImage = async (imageUrl: string) => {
   try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.download = `inspiro-quote-${Date.now()}.png`;
-    link.href = imageUrl;
+    link.href = url;
     link.click();
+    window.URL.revokeObjectURL(url);
 
     toast({
       title: "Image downloaded!",
