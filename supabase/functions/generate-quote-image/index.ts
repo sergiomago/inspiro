@@ -42,6 +42,7 @@ serve(async (req) => {
               max-width: 800px;
               padding: 60px;
               text-align: center;
+              position: relative;
             }
             .quote {
               font-size: 48px;
@@ -56,12 +57,18 @@ serve(async (req) => {
             .logo {
               position: absolute;
               bottom: 40px;
+              left: 50%;
+              transform: translateX(-50%);
               font-family: 'Satisfy', cursive;
               font-size: 42px;
               background: linear-gradient(to right, #9b87f5, #6E59A5);
               -webkit-background-clip: text;
               -webkit-text-fill-color: transparent;
               opacity: 0.9;
+              padding: 0;
+              margin: 0;
+              display: inline-block;
+              white-space: nowrap;
             }
           </style>
         </head>

@@ -4,7 +4,8 @@ import { Share2, Link, Facebook, Twitter, Linkedin, Instagram, Download } from "
 import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import html2canvas from "html2canvas"
+import { generateImageFromHtml } from "./utils/imageGenerator"
+import { shareToSocial, downloadImage, copyImageLink } from "./utils/socialSharing"
 
 interface ShareDialogProps {
   quote: string
@@ -43,9 +44,13 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
 
   // Generate image URL when HTML data changes
   useEffect(() => {
-    if (htmlData) {
-      generateImageUrl()
+    const generateUrl = async () => {
+      if (htmlData) {
+        const url = await generateImageFromHtml(htmlData)
+        if (url) setImageUrl(url)
+      }
     }
+    generateUrl()
   }, [htmlData])
 
   // Reset image when quote changes
@@ -53,117 +58,6 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
     setHtmlData(null)
     setImageUrl(null)
   }, [quote, author])
-
-  const generateImageUrl = async () => {
-    if (!htmlData) return
-
-    try {
-      // Create an iframe to render the HTML
-      const iframe = document.createElement('iframe')
-      iframe.style.position = 'fixed'
-      iframe.style.top = '-9999px'
-      iframe.style.width = '1080px'
-      iframe.style.height = '1080px'
-      document.body.appendChild(iframe)
-
-      // Write the HTML content to the iframe
-      iframe.contentWindow?.document.open()
-      iframe.contentWindow?.document.write(atob(htmlData.split(',')[1]))
-      iframe.contentWindow?.document.close()
-
-      // Wait for fonts to load
-      await new Promise(resolve => setTimeout(resolve, 500))
-
-      // Use html2canvas to capture the iframe content
-      const canvas = await html2canvas(iframe.contentWindow?.document.body as HTMLElement, {
-        width: 1080,
-        height: 1080,
-        scale: 1
-      })
-
-      // Get image URL
-      const url = canvas.toDataURL('image/png')
-      setImageUrl(url)
-
-      // Clean up
-      document.body.removeChild(iframe)
-    } catch (error) {
-      toast({
-        title: "Error generating image URL",
-        description: "Please try again",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handleDownload = async () => {
-    if (!imageUrl) return
-
-    try {
-      const link = document.createElement('a')
-      link.download = `inspiro-quote-${Date.now()}.png`
-      link.href = imageUrl
-      link.click()
-
-      toast({
-        title: "Image downloaded!",
-        description: "Your quote card has been saved",
-      })
-    } catch (error) {
-      toast({
-        title: "Error downloading image",
-        description: "Please try again",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const shareToSocial = async (platform: string) => {
-    if (!imageUrl) return
-
-    const text = `"${quote}" - ${author}\n\nShared via Inspiro`
-    let url = ''
-
-    switch (platform) {
-      case 'facebook':
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrl)}&quote=${encodeURIComponent(text)}`
-        break
-      case 'twitter':
-        url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(imageUrl)}`
-        break
-      case 'linkedin':
-        url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(imageUrl)}&summary=${encodeURIComponent(text)}`
-        break
-      case 'instagram':
-        toast({
-          title: "Share on Instagram",
-          description: "Click the download button and share the image on Instagram",
-        })
-        return
-      default:
-        return
-    }
-
-    window.open(url, '_blank')
-  }
-
-  const copyLink = async () => {
-    if (!imageUrl) return
-
-    try {
-      await navigator.clipboard.writeText(imageUrl)
-      toast({
-        title: "Link copied!",
-        description: "The image link has been copied to your clipboard",
-      })
-    } catch (error) {
-      toast({
-        title: "Error copying link",
-        description: "Please try again",
-        variant: "destructive"
-      })
-    }
-  }
 
   return (
     <Dialog>
@@ -195,22 +89,52 @@ export const ShareDialog = ({ quote, author }: ShareDialogProps) => {
             </div>
           )}
           <div className="flex flex-wrap gap-2 justify-center">
-            <Button variant="outline" size="icon" onClick={copyLink}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && copyImageLink(imageUrl)}
+              disabled={!imageUrl}
+            >
               <Link className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => shareToSocial('facebook')}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && shareToSocial('facebook', { imageUrl, quote, author })}
+              disabled={!imageUrl}
+            >
               <Facebook className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => shareToSocial('twitter')}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && shareToSocial('twitter', { imageUrl, quote, author })}
+              disabled={!imageUrl}
+            >
               <Twitter className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => shareToSocial('linkedin')}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && shareToSocial('linkedin', { imageUrl, quote, author })}
+              disabled={!imageUrl}
+            >
               <Linkedin className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => shareToSocial('instagram')}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && shareToSocial('instagram', { imageUrl, quote, author })}
+              disabled={!imageUrl}
+            >
               <Instagram className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={handleDownload}>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => imageUrl && downloadImage(imageUrl)}
+              disabled={!imageUrl}
+            >
               <Download className="h-4 w-4" />
             </Button>
           </div>
