@@ -41,6 +41,11 @@ serve(async (req) => {
               padding: 60px;
               text-align: center;
               position: relative;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              min-height: 600px;
             }
             .quote {
               font-size: 48px;
@@ -56,18 +61,30 @@ serve(async (req) => {
             .logo {
               font-family: 'Satisfy', cursive;
               font-size: 42px;
-              background: linear-gradient(to right, #9b87f5, #6E59A5);
-              -webkit-background-clip: text;
-              background-clip: text;
-              -webkit-text-fill-color: transparent;
+              color: rgba(255, 255, 255, 0.9);
+            }
+            .credit {
+              position: absolute;
+              bottom: 20px;
+              font-size: 12px;
+              opacity: 0.7;
+            }
+            .credit a {
+              color: white;
+              text-decoration: none;
             }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="quote">"${quote}"</div>
-            <div class="author">- ${author}</div>
+            <div>
+              <div class="quote">"${quote}"</div>
+              <div class="author">- ${author}</div>
+            </div>
             <div class="logo">inspiro</div>
+            <div class="credit">
+              <a href="https://whytoai.com/" target="_blank">Developed by Why to AI</a>
+            </div>
           </div>
         </body>
       </html>
