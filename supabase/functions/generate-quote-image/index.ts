@@ -56,14 +56,13 @@ serve(async (req) => {
             .logo {
               font-family: 'Satisfy', cursive;
               font-size: 42px;
-              background: linear-gradient(to right, #9b87f5, #6E59A5);
+              color: transparent;
+              background-image: linear-gradient(to right, #9b87f5, #6E59A5);
               -webkit-background-clip: text;
               background-clip: text;
-              -webkit-text-fill-color: transparent;
-              margin: 0;
-              padding: 0;
               display: inline-block;
-              position: relative;
+              padding: 0;
+              margin: 0;
             }
           </style>
         </head>
