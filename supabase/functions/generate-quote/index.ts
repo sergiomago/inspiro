@@ -17,8 +17,6 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
-let lastGeneratedType = 'classic';
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -28,97 +26,111 @@ serve(async (req) => {
     const { type = 'mixed', searchTerm = '', filterType = 'topic' } = await req.json();
     console.log("Generate quote called with:", { type, searchTerm, filterType });
 
-    // If searching by author, only return quotes from that author
+    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+    if (!perplexityApiKey) {
+      throw new Error('Perplexity API key not configured');
+    }
+
+    // If searching by author, use Perplexity to find verified quotes
     if (filterType === 'author' && searchTerm) {
-      // For author searches, we should only return classic quotes
-      const authorQuotes = classicQuotes.filter(q => 
-        q.author.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      
-      if (authorQuotes.length > 0) {
-        const randomQuote = authorQuotes[Math.floor(Math.random() * authorQuotes.length)];
-        console.log("Returning author quote:", randomQuote);
-        return new Response(JSON.stringify(randomQuote), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      console.log("Searching for author quotes using Perplexity");
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${perplexityApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-sonar-large-128k-online',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a quote expert. Search for and verify quotes from the specified author.
+              Only return quotes that you can verify are genuinely from this author.
+              If no verified quotes are found, clearly state this.
+              Format: "[quote text]" - [author name]`
+            },
+            {
+              role: 'user',
+              content: `Find a verified quote from ${searchTerm}`
+            }
+          ],
+          temperature: 0.2,
+          top_p: 0.9,
+          max_tokens: 1000,
+          search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
+          search_recency_filter: 'month',
+          frequency_penalty: 1,
+          presence_penalty: 0
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Perplexity API error: ${response.status}`);
       }
+
+      const data = await response.json();
+      const generatedText = data.choices[0].message.content.trim();
       
-      // If no quotes found for author, return a message
+      const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
+      if (!quoteMatch) {
+        console.error('Invalid quote format received:', generatedText);
+        throw new Error('Invalid quote format received from Perplexity');
+      }
+
       return new Response(JSON.stringify({
-        quote: `No quotes found from ${searchTerm}`,
-        author: "System"
+        quote: quoteMatch[1].trim(),
+        author: quoteMatch[2].trim()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // For topic searches or no search, follow the saved settings
-    if (type === 'human' || (type === 'mixed' && lastGeneratedType === 'ai')) {
-      // For classic quotes, try to find one matching the topic if specified
-      if (filterType === 'topic' && searchTerm) {
-        const topicQuotes = classicQuotes.filter(q => 
-          q.quote.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        if (topicQuotes.length > 0) {
-          const randomQuote = topicQuotes[Math.floor(Math.random() * topicQuotes.length)];
-          if (type === 'mixed') lastGeneratedType = 'classic';
-          return new Response(JSON.stringify(randomQuote), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-      }
-      
-      // If no topic match or no topic specified, return random classic quote
-      const randomQuote = classicQuotes[Math.floor(Math.random() * classicQuotes.length)];
-      if (type === 'mixed') lastGeneratedType = 'classic';
-      return new Response(JSON.stringify(randomQuote), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // For topic searches or random quotes, use Perplexity with different prompts
+    const systemPrompt = searchTerm 
+      ? `You are a quote expert. ${type === 'human' 
+          ? `Search for real, verified quotes about "${searchTerm}".` 
+          : type === 'ai' 
+            ? `Generate an original, inspiring quote about "${searchTerm}" and attribute it to "Inspiro AI".`
+            : `Either find a real quote or generate an AI quote about "${searchTerm}". If generating, attribute to "Inspiro AI".`}`
+      : `You are a quote expert. ${type === 'human'
+          ? 'Provide a verified quote from history.'
+          : type === 'ai'
+            ? 'Generate an original, inspiring quote and attribute it to "Inspiro AI".'
+            : 'Either provide a verified historical quote or generate an original quote (attribute AI-generated ones to "Inspiro AI").'}`;
 
-    // For AI-generated quotes
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+    console.log("Using system prompt:", systemPrompt);
 
-    let systemPrompt = `You are a quote generator that creates meaningful and contextually relevant quotes.
-    When generating quotes, follow these rules:
-    1. Create completely original, inspiring quotes
-    2. NEVER quote real people or historical figures
-    3. Always attribute quotes to "Inspiro AI"
-    4. Keep quotes concise and impactful
-    5. If given a topic, make sure the quote directly relates to it
-    6. Always follow this EXACT format: "[quote text]" - Inspiro AI
-    
-    DO NOT include any additional text or formatting.
-    ONLY return the quote in the exact format shown above.`;
-
-    let userPrompt = filterType === 'topic' && searchTerm
-      ? `Generate an original inspirational quote about ${searchTerm}.`
-      : "Generate an original inspirational quote.";
-
-    console.log("Calling OpenAI with prompt:", userPrompt);
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${perplexityApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.1-sonar-large-128k-online',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: 'Provide a quote following the specified criteria.'
+          }
         ],
-        temperature: 0.7,
+        temperature: 0.2,
+        top_p: 0.9,
+        max_tokens: 1000,
+        search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`Perplexity API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -127,20 +139,13 @@ serve(async (req) => {
     const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
     if (!quoteMatch) {
       console.error('Invalid quote format received:', generatedText);
-      throw new Error('Invalid quote format received from OpenAI');
+      throw new Error('Invalid quote format received from Perplexity');
     }
 
-    const result = {
+    return new Response(JSON.stringify({
       quote: quoteMatch[1].trim(),
-      author: "Inspiro AI"
-    };
-
-    if (type === 'mixed') {
-      lastGeneratedType = 'ai';
-    }
-
-    console.log("Generated quote:", result);
-    return new Response(JSON.stringify(result), {
+      author: quoteMatch[2].trim()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
