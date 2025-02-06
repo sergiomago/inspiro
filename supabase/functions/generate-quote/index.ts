@@ -17,6 +17,38 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
+function extractQuoteAndAuthor(text: string): { quote: string; author: string } | null {
+  console.log("Attempting to extract quote and author from:", text);
+  
+  // Try different quote formats
+  const patterns = [
+    /"([^"]+)"\s*[-–—]\s*([^[\n]+?)(?:\[.*?\])?\.?\s*$/, // Handles quotes with optional citation numbers
+    /"([^"]+)"\s*by\s*([^[\n]+?)(?:\[.*?\])?\.?\s*$/, // Handles "quote" by Author format
+    /['']([^'']+)['']\s*[-–—]\s*([^[\n]+?)(?:\[.*?\])?\.?\s*$/, // Handles single quotes
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      return {
+        quote: match[1].trim(),
+        author: match[2].trim().replace(/\[\d+\]$/, '').trim() // Remove citation numbers
+      };
+    }
+  }
+
+  // If no patterns match, try to find any quoted text and following text
+  const fallbackMatch = text.match(/"([^"]+)".*?[-–—]\s*([^,\n]+)/);
+  if (fallbackMatch) {
+    return {
+      quote: fallbackMatch[1].trim(),
+      author: fallbackMatch[2].trim().replace(/\[\d+\]$/, '').trim()
+    };
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -45,23 +77,20 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `You are a quote expert. Search for and verify quotes from the specified author.
-              Only return quotes that you can verify are genuinely from this author.
-              If no verified quotes are found, clearly state this.
-              Format: "[quote text]" - [author name]`
+              content: `You are a quote expert. Find a verified quote from the specified author.
+              Format the response exactly like this: "Quote text" - Author Name
+              Do not include any other text or formatting.`
             },
             {
               role: 'user',
               content: `Find a verified quote from ${searchTerm}`
             }
           ],
-          temperature: 0.2,
+          temperature: 0.7,
           top_p: 0.9,
           max_tokens: 1000,
-          search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
-          search_recency_filter: 'month',
           frequency_penalty: 1,
-          presence_penalty: 0
+          presence_penalty: 1
         }),
       });
 
@@ -71,17 +100,15 @@ serve(async (req) => {
 
       const data = await response.json();
       const generatedText = data.choices[0].message.content.trim();
+      console.log("Perplexity response:", generatedText);
       
-      const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
-      if (!quoteMatch) {
-        console.error('Invalid quote format received:', generatedText);
+      const extracted = extractQuoteAndAuthor(generatedText);
+      if (!extracted) {
+        console.error('Failed to extract quote from:', generatedText);
         throw new Error('Invalid quote format received from Perplexity');
       }
 
-      return new Response(JSON.stringify({
-        quote: quoteMatch[1].trim(),
-        author: quoteMatch[2].trim()
-      }), {
+      return new Response(JSON.stringify(extracted), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -89,15 +116,16 @@ serve(async (req) => {
     // For topic searches or random quotes, use Perplexity with different prompts
     const systemPrompt = searchTerm 
       ? `You are a quote expert. ${type === 'human' 
-          ? `Search for real, verified quotes about "${searchTerm}".` 
+          ? `Find a real, verified quote about "${searchTerm}".` 
           : type === 'ai' 
-            ? `Generate an original, inspiring quote about "${searchTerm}" and attribute it to "Inspiro AI".`
-            : `Either find a real quote or generate an AI quote about "${searchTerm}". If generating, attribute to "Inspiro AI".`}`
+            ? `Generate an original, inspiring quote about "${searchTerm}". Format the response exactly as: "Quote text" - Inspiro AI` 
+            : `Either find a real quote or generate an AI quote about "${searchTerm}". If generating, format as: "Quote text" - Inspiro AI`}`
       : `You are a quote expert. ${type === 'human'
-          ? 'Provide a verified quote from history.'
+          ? 'Provide a verified quote from history.' 
           : type === 'ai'
-            ? 'Generate an original, inspiring quote and attribute it to "Inspiro AI".'
-            : 'Either provide a verified historical quote or generate an original quote (attribute AI-generated ones to "Inspiro AI").'}`;
+            ? 'Generate an original, inspiring quote. Format as: "Quote text" - Inspiro AI'
+            : 'Either provide a verified historical quote or generate an original quote. If generating, format as: "Quote text" - Inspiro AI'}
+          Format the response exactly as: "Quote text" - Author Name`;
 
     console.log("Using system prompt:", systemPrompt);
 
@@ -116,16 +144,14 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: 'Provide a quote following the specified criteria.'
+            content: 'Provide a quote following the specified format.'
           }
         ],
-        temperature: 0.2,
+        temperature: 0.7,
         top_p: 0.9,
         max_tokens: 1000,
-        search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
-        search_recency_filter: 'month',
         frequency_penalty: 1,
-        presence_penalty: 0
+        presence_penalty: 1
       }),
     });
 
@@ -135,24 +161,26 @@ serve(async (req) => {
 
     const data = await response.json();
     const generatedText = data.choices[0].message.content.trim();
+    console.log("Perplexity response:", generatedText);
     
-    const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
-    if (!quoteMatch) {
-      console.error('Invalid quote format received:', generatedText);
-      throw new Error('Invalid quote format received from Perplexity');
+    const extracted = extractQuoteAndAuthor(generatedText);
+    if (!extracted) {
+      console.log('Failed to extract quote, falling back to classic quotes');
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+      return new Response(JSON.stringify(classicQuotes[randomIndex]), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    return new Response(JSON.stringify({
-      quote: quoteMatch[1].trim(),
-      author: quoteMatch[2].trim()
-    }), {
+    return new Response(JSON.stringify(extracted), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in generate-quote function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    // Fallback to classic quotes on error
+    const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+    return new Response(JSON.stringify(classicQuotes[randomIndex]), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
