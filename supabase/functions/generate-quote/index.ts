@@ -17,28 +17,6 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
-function extractQuoteAndAuthor(text: string): { quote: string; author: string } | null {
-  // Try different quote formats
-  const formats = [
-    /"([^"]+)"\s*-\s*(.+)/,                   // "Quote" - Author
-    /"([^"]+)"\s+by\s+(.+)/,                  // "Quote" by Author
-    /([^"]+)\s*-\s*(.+)/,                     // Quote - Author
-    /([^"]+)\s+by\s+(.+)/                     // Quote by Author
-  ];
-
-  for (const format of formats) {
-    const match = text.match(format);
-    if (match) {
-      return {
-        quote: match[1].trim(),
-        author: match[2].trim()
-      };
-    }
-  }
-
-  return null;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -67,66 +45,62 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `You are a quote expert. Find a verified quote from ${searchTerm}. 
-              Format your response exactly as: "Quote text here" - Author Name
+              content: `You are a quote expert. Search for and verify quotes from the specified author.
               Only return quotes that you can verify are genuinely from this author.
-              If no verified quotes are found, say "No verified quotes found".
-              Do not include any additional text or explanation.`
+              If no verified quotes are found, clearly state this.
+              Format: "[quote text]" - [author name]`
             },
             {
               role: 'user',
-              content: `Return a random verified quote from ${searchTerm}`
+              content: `Find a verified quote from ${searchTerm}`
             }
           ],
-          temperature: 0.8, // Increased for more variety
+          temperature: 0.2,
           top_p: 0.9,
           max_tokens: 1000,
-          frequency_penalty: 1.5, // Increased to reduce repetition
-          presence_penalty: 1.5
+          search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
+          search_recency_filter: 'month',
+          frequency_penalty: 1,
+          presence_penalty: 0
         }),
       });
 
       if (!response.ok) {
-        console.error('Perplexity API error:', response.status, response.statusText);
         throw new Error(`Perplexity API error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Perplexity response:", data);
-      
       const generatedText = data.choices[0].message.content.trim();
-      console.log("Generated text:", generatedText);
-
-      if (generatedText === "No verified quotes found") {
-        throw new Error('No verified quotes found for this author');
-      }
-
-      const extracted = extractQuoteAndAuthor(generatedText);
-      if (!extracted) {
-        console.error('Failed to parse quote:', generatedText);
+      
+      const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
+      if (!quoteMatch) {
+        console.error('Invalid quote format received:', generatedText);
         throw new Error('Invalid quote format received from Perplexity');
       }
 
-      // Verify the author matches (case-insensitive)
-      if (!extracted.author.toLowerCase().includes(searchTerm.toLowerCase())) {
-        console.error('Author mismatch:', { expected: searchTerm, got: extracted.author });
-        throw new Error('Quote attribution mismatch');
-      }
-
-      return new Response(JSON.stringify(extracted), {
+      return new Response(JSON.stringify({
+        quote: quoteMatch[1].trim(),
+        author: quoteMatch[2].trim()
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // For topic searches or random quotes, use classic quotes or generate new ones
-    if (type === 'human' || (type === 'mixed' && Math.random() < 0.3)) {
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return new Response(JSON.stringify(classicQuotes[randomIndex]), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // For topic searches or random quotes, use Perplexity with different prompts
+    const systemPrompt = searchTerm 
+      ? `You are a quote expert. ${type === 'human' 
+          ? `Search for real, verified quotes about "${searchTerm}".` 
+          : type === 'ai' 
+            ? `Generate an original, inspiring quote about "${searchTerm}" and attribute it to "Inspiro AI".`
+            : `Either find a real quote or generate an AI quote about "${searchTerm}". If generating, attribute to "Inspiro AI".`}`
+      : `You are a quote expert. ${type === 'human'
+          ? 'Provide a verified quote from history.'
+          : type === 'ai'
+            ? 'Generate an original, inspiring quote and attribute it to "Inspiro AI".'
+            : 'Either provide a verified historical quote or generate an original quote (attribute AI-generated ones to "Inspiro AI").'}`;
 
-    // Generate AI quote
+    console.log("Using system prompt:", systemPrompt);
+
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -138,50 +112,47 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Generate an inspiring quote${searchTerm ? ` about ${searchTerm}` : ''}.
-            Format your response exactly as: "Quote text here" - Inspiro AI
-            The quote should be concise and meaningful.
-            Do not include any additional text or explanation.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: 'Generate a quote'
+            content: 'Provide a quote following the specified criteria.'
           }
         ],
-        temperature: 0.8,
+        temperature: 0.2,
         top_p: 0.9,
         max_tokens: 1000,
-        frequency_penalty: 1.5,
-        presence_penalty: 1.5
+        search_domain_filter: ['quoteinvestigator.com', 'wikiquote.org', 'brainyquote.com'],
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
       }),
     });
 
     if (!response.ok) {
-      console.error('Perplexity API error:', response.status, response.statusText);
       throw new Error(`Perplexity API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("Perplexity response for AI quote:", data);
-    
     const generatedText = data.choices[0].message.content.trim();
-    console.log("Generated AI quote text:", generatedText);
-
-    const extracted = extractQuoteAndAuthor(generatedText);
-    if (!extracted) {
-      console.error('Failed to parse AI quote:', generatedText);
+    
+    const quoteMatch = generatedText.match(/"([^"]+)"\s*-\s*(.+)/);
+    if (!quoteMatch) {
+      console.error('Invalid quote format received:', generatedText);
       throw new Error('Invalid quote format received from Perplexity');
     }
 
-    return new Response(JSON.stringify(extracted), {
+    return new Response(JSON.stringify({
+      quote: quoteMatch[1].trim(),
+      author: quoteMatch[2].trim()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in generate-quote function:', error);
-    // Fall back to a classic quote on error
-    const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-    return new Response(JSON.stringify(classicQuotes[randomIndex]), {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
