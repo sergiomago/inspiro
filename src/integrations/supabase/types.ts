@@ -63,6 +63,27 @@ export type Database = {
         }
         Relationships: []
       }
+      used_quotes: {
+        Row: {
+          created_at: string
+          id: number
+          quote: string
+          search_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          quote: string
+          search_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          quote?: string
+          search_key?: string
+        }
+        Relationships: []
+      }
       user_filters: {
         Row: {
           created_at: string
@@ -116,7 +137,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clean_old_used_quotes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
