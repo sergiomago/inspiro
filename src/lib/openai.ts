@@ -21,16 +21,6 @@ export const generateQuote = async (
   console.log("generateQuote called with:", { type, searchTerm, filterType });
   
   try {
-    // For mixed type without search term, randomly choose between AI and classic
-    if (type === 'mixed' && !searchTerm) {
-      const useClassic = Math.random() < 0.3; // 30% chance for classic quotes
-      if (useClassic) {
-        const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-        return classicQuotes[randomIndex];
-      }
-    }
-
-    // Always use AI for search terms or when specifically requested
     const { data, error } = await supabase.functions.invoke('generate-quote', {
       body: { type, searchTerm, filterType }
     });
@@ -39,12 +29,18 @@ export const generateQuote = async (
 
     if (error) {
       console.error('Error calling generate-quote function:', error);
+      toast.error('Failed to generate quote. Using a classic quote instead.');
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return classicQuotes[randomIndex];
     }
 
-    // Handle the NO_MORE_QUOTES error
     if (data.error === 'NO_MORE_QUOTES') {
+      toast.error(data.message);
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+      return classicQuotes[randomIndex];
+    }
+
+    if (data.error === 'GENERATION_FAILED' || data.error === 'CRITICAL_ERROR') {
       toast.error(data.message);
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return classicQuotes[randomIndex];
@@ -53,6 +49,7 @@ export const generateQuote = async (
     return data;
   } catch (error) {
     console.error('Error generating quote:', error);
+    toast.error('Unexpected error. Using a classic quote instead.');
     const randomIndex = Math.floor(Math.random() * classicQuotes.length);
     return classicQuotes[randomIndex];
   }

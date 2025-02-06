@@ -68,18 +68,21 @@ export type Database = {
           created_at: string
           id: number
           quote: string
+          quote_type: string | null
           search_key: string
         }
         Insert: {
           created_at?: string
           id?: number
           quote: string
+          quote_type?: string | null
           search_key: string
         }
         Update: {
           created_at?: string
           id?: number
           quote?: string
+          quote_type?: string | null
           search_key?: string
         }
         Relationships: []
