@@ -1,4 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const classicQuotes = [
   { quote: "Be the change you wish to see in the world.", author: "Mahatma Gandhi" },
@@ -37,6 +39,13 @@ export const generateQuote = async (
 
     if (error) {
       console.error('Error calling generate-quote function:', error);
+      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+      return classicQuotes[randomIndex];
+    }
+
+    // Handle the NO_MORE_QUOTES error
+    if (data.error === 'NO_MORE_QUOTES') {
+      toast.error(data.message);
       const randomIndex = Math.floor(Math.random() * classicQuotes.length);
       return classicQuotes[randomIndex];
     }

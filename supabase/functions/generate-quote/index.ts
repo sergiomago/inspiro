@@ -17,6 +17,14 @@ const classicQuotes = [
   { quote: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
 ];
 
+// Keep track of used quotes to avoid repetition
+const usedQuotes = new Map<string, Set<string>>();
+
+// Clear used quotes after 1 hour to prevent memory issues
+setInterval(() => {
+  usedQuotes.clear();
+}, 3600000);
+
 function extractQuoteAndAuthor(text: string): { quote: string; author: string } | null {
   console.log("Attempting to extract quote and author from:", text);
   
@@ -49,6 +57,18 @@ function extractQuoteAndAuthor(text: string): { quote: string; author: string } 
   return null;
 }
 
+function isQuoteUsed(searchKey: string, quote: string): boolean {
+  const quotesForKey = usedQuotes.get(searchKey) || new Set();
+  return quotesForKey.has(quote);
+}
+
+function markQuoteAsUsed(searchKey: string, quote: string) {
+  if (!usedQuotes.has(searchKey)) {
+    usedQuotes.set(searchKey, new Set());
+  }
+  usedQuotes.get(searchKey)?.add(quote);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,9 +83,43 @@ serve(async (req) => {
       throw new Error('Perplexity API key not configured');
     }
 
-    // If searching by author, use Perplexity to find verified quotes
-    if (filterType === 'author' && searchTerm) {
-      console.log("Searching for author quotes using Perplexity");
+    // For author searches, try multiple times to get a new quote
+    const maxAttempts = filterType === 'author' ? 5 : 3;
+    let attempts = 0;
+    let noMoreQuotes = false;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`Attempt ${attempts} of ${maxAttempts}`);
+
+      let systemPrompt = '';
+      
+      if (filterType === 'author' && searchTerm) {
+        systemPrompt = `You are a quote expert. Find a verified, different quote from ${searchTerm} that hasn't been shared before. 
+        Format the response exactly like this: "Quote text" - Author Name
+        If no more unique quotes are available from this author, respond with: NO_MORE_QUOTES`;
+      } else if (searchTerm) {
+        systemPrompt = `You are a quote expert. ${
+          type === 'human' 
+            ? `Find a real, verified quote about "${searchTerm}" from an author we haven't used recently.` 
+            : type === 'ai' 
+              ? `Generate an original, inspiring quote about "${searchTerm}". Format the response exactly as: "Quote text" - Inspiro AI` 
+              : `Either find a real quote or generate an AI quote about "${searchTerm}" from a different perspective than previous quotes. If generating, format as: "Quote text" - Inspiro AI`
+        }
+        Format the response exactly as: "Quote text" - Author Name`;
+      } else {
+        systemPrompt = `You are a quote expert. ${
+          type === 'human'
+            ? 'Provide a verified quote from history.' 
+            : type === 'ai'
+              ? 'Generate an original, inspiring quote. Format as: "Quote text" - Inspiro AI'
+              : 'Either provide a verified historical quote or generate an original quote. If generating, format as: "Quote text" - Inspiro AI'
+        }
+        Format the response exactly as: "Quote text" - Author Name`;
+      }
+
+      console.log("Using system prompt:", systemPrompt);
+
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
@@ -77,16 +131,14 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `You are a quote expert. Find a verified quote from the specified author.
-              Format the response exactly like this: "Quote text" - Author Name
-              Do not include any other text or formatting.`
+              content: systemPrompt
             },
             {
               role: 'user',
-              content: `Find a verified quote from ${searchTerm}`
+              content: 'Provide a quote following the specified format.'
             }
           ],
-          temperature: 0.7,
+          temperature: 0.9,
           top_p: 0.9,
           max_tokens: 1000,
           frequency_penalty: 1,
@@ -101,78 +153,43 @@ serve(async (req) => {
       const data = await response.json();
       const generatedText = data.choices[0].message.content.trim();
       console.log("Perplexity response:", generatedText);
-      
-      const extracted = extractQuoteAndAuthor(generatedText);
-      if (!extracted) {
-        console.error('Failed to extract quote from:', generatedText);
-        throw new Error('Invalid quote format received from Perplexity');
+
+      // Check for no more quotes message
+      if (generatedText === 'NO_MORE_QUOTES') {
+        noMoreQuotes = true;
+        break;
       }
 
-      return new Response(JSON.stringify(extracted), {
+      const extracted = extractQuoteAndAuthor(generatedText);
+      if (!extracted) {
+        console.log('Failed to extract quote from:', generatedText);
+        continue;
+      }
+
+      const searchKey = `${filterType}:${searchTerm || 'random'}`;
+      if (!isQuoteUsed(searchKey, extracted.quote)) {
+        markQuoteAsUsed(searchKey, extracted.quote);
+        return new Response(JSON.stringify(extracted), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('Quote was already used, trying again...');
+    }
+
+    if (noMoreQuotes) {
+      return new Response(JSON.stringify({ 
+        error: 'NO_MORE_QUOTES',
+        message: `No more unique quotes available from ${searchTerm}`
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // For topic searches or random quotes, use Perplexity with different prompts
-    const systemPrompt = searchTerm 
-      ? `You are a quote expert. ${type === 'human' 
-          ? `Find a real, verified quote about "${searchTerm}".` 
-          : type === 'ai' 
-            ? `Generate an original, inspiring quote about "${searchTerm}". Format the response exactly as: "Quote text" - Inspiro AI` 
-            : `Either find a real quote or generate an AI quote about "${searchTerm}". If generating, format as: "Quote text" - Inspiro AI`}`
-      : `You are a quote expert. ${type === 'human'
-          ? 'Provide a verified quote from history.' 
-          : type === 'ai'
-            ? 'Generate an original, inspiring quote. Format as: "Quote text" - Inspiro AI'
-            : 'Either provide a verified historical quote or generate an original quote. If generating, format as: "Quote text" - Inspiro AI'}
-          Format the response exactly as: "Quote text" - Author Name`;
-
-    console.log("Using system prompt:", systemPrompt);
-
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${perplexityApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: 'Provide a quote following the specified format.'
-          }
-        ],
-        temperature: 0.7,
-        top_p: 0.9,
-        max_tokens: 1000,
-        frequency_penalty: 1,
-        presence_penalty: 1
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Perplexity API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const generatedText = data.choices[0].message.content.trim();
-    console.log("Perplexity response:", generatedText);
-    
-    const extracted = extractQuoteAndAuthor(generatedText);
-    if (!extracted) {
-      console.log('Failed to extract quote, falling back to classic quotes');
-      const randomIndex = Math.floor(Math.random() * classicQuotes.length);
-      return new Response(JSON.stringify(classicQuotes[randomIndex]), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify(extracted), {
+    // If we couldn't get a unique quote after all attempts, use a classic quote
+    console.log('Failed to get unique quote after all attempts, using classic quote');
+    const randomIndex = Math.floor(Math.random() * classicQuotes.length);
+    return new Response(JSON.stringify(classicQuotes[randomIndex]), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
