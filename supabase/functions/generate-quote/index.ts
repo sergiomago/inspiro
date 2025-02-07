@@ -1,5 +1,5 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
@@ -91,6 +91,7 @@ async function retryWithBackoff(fn: () => Promise<any>, maxAttempts: number = 3)
     try {
       return await fn();
     } catch (error) {
+      console.error(`Attempt ${attempt} failed:`, error);
       if (attempt === maxAttempts) throw error;
       const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -99,6 +100,7 @@ async function retryWithBackoff(fn: () => Promise<any>, maxAttempts: number = 3)
 }
 
 serve(async (req) => {
+  // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -126,7 +128,7 @@ serve(async (req) => {
 
     // For mixed type without search term, try AI first
     if (type === 'mixed' && !searchTerm) {
-      const useClassic = Math.random() < 0.1; // Reduced to 10% chance for classic quotes
+      const useClassic = Math.random() < 0.1; // 10% chance for classic quotes
       if (useClassic) {
         for (const quote of classicQuotes) {
           if (!await isQuoteUsed(supabase, 'classic', quote.quote, 'classic')) {
